@@ -1,6 +1,8 @@
 package com.prempoddar.loadstone.ui.navigate
 
 import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,15 +10,19 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Terrain
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -52,10 +58,14 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.prempoddar.loadstone.core.format.CoordinateFormat
 import com.prempoddar.loadstone.core.format.UnitFormatter
+import com.prempoddar.loadstone.data.photo.PhotoStore
 import com.prempoddar.loadstone.data.pin.Pin
 import com.prempoddar.loadstone.ui.LocalUnitSystem
 import com.prempoddar.loadstone.ui.components.CompassArrow
+import com.prempoddar.loadstone.ui.components.PhotoRow
+import com.prempoddar.loadstone.ui.components.PhotoViewerDialog
 import com.prempoddar.loadstone.ui.permission.rememberLocationPermissionState
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,6 +83,23 @@ fun NavigateScreen(
     var menuOpen by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var wasArrived by remember { mutableStateOf(false) }
+    var viewerPath by remember { mutableStateOf<String?>(null) }
+    var pendingFile by remember { mutableStateOf<File?>(null) }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture(),
+    ) { success ->
+        val file = pendingFile
+        if (success && file != null) viewModel.addPhoto(file.absolutePath)
+        else if (file != null) PhotoStore.delete(file.absolutePath)
+        pendingFile = null
+    }
+
+    fun launchCamera() {
+        val file = PhotoStore.newPhotoFile(context)
+        pendingFile = file
+        cameraLauncher.launch(PhotoStore.uriFor(context, file))
+    }
 
     LaunchedEffect(permission.hasPermission) {
         if (permission.hasPermission) viewModel.start()
@@ -136,10 +163,15 @@ fun NavigateScreen(
             return@Scaffold
         }
 
+        val pin = state.pin
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceEvenly,
+            verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Box(contentAlignment = Alignment.Center) {
                 CompassArrow(angleDegrees = state.arrowAngle, arrived = state.arrived)
@@ -169,14 +201,14 @@ fun NavigateScreen(
                         color = MaterialTheme.colorScheme.onBackground,
                     )
                     Text(
-                        "to " + (state.pin?.name ?: "pin"),
+                        "to " + (pin?.name ?: "pin"),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
 
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 state.currentAccuracyMeters?.let { acc ->
                     AssistChip(
                         onClick = {},
@@ -184,17 +216,39 @@ fun NavigateScreen(
                         colors = AssistChipDefaults.assistChipColors(),
                     )
                 }
-                AnimatedVisibility(visible = state.compassAccuracyClass <= 1) {
-                    Text(
-                        "Compass needs calibration — wave your phone in a figure 8.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 8.dp),
+                pin?.elevationMeters?.let { elev ->
+                    AssistChip(
+                        onClick = {},
+                        leadingIcon = { Icon(Icons.Filled.Terrain, contentDescription = null) },
+                        label = { Text("~${UnitFormatter.formatElevation(elev, unit)}") },
                     )
                 }
             }
+
+            AnimatedVisibility(visible = state.compassAccuracyClass <= 1) {
+                Text(
+                    "Compass needs calibration — wave your phone in a figure 8.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+
+            if (pin != null) {
+                PhotoRow(
+                    paths = pin.photoPaths,
+                    modifier = Modifier.fillMaxWidth(),
+                    onAdd = { launchCamera() },
+                    onOpen = { viewerPath = it },
+                    onRemove = { viewModel.removePhoto(it) },
+                )
+            }
         }
+    }
+
+    viewerPath?.let { path ->
+        PhotoViewerDialog(path = path, onDismiss = { viewerPath = null })
     }
 
     if (confirmDelete) {

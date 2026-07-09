@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.prempoddar.loadstone.core.geo.GeoMath
 import com.prempoddar.loadstone.data.location.CompassRepository
 import com.prempoddar.loadstone.data.location.LocationRepository
+import com.prempoddar.loadstone.data.photo.PhotoStore
 import com.prempoddar.loadstone.data.pin.Pin
 import com.prempoddar.loadstone.data.pin.PinRepository
 import com.prempoddar.loadstone.ui.nav.Routes
@@ -98,6 +99,23 @@ class NavigateViewModel @Inject constructor(
         viewModelScope.launch {
             pinRepository.delete(pinId)
             onDeleted()
+        }
+    }
+
+    fun addPhoto(path: String) {
+        val p = pin.value ?: return
+        val updated = p.copy(photoPaths = p.photoPaths + path)
+        pin.value = updated
+        viewModelScope.launch { pinRepository.upsert(updated) }
+    }
+
+    fun removePhoto(path: String) {
+        val p = pin.value ?: return
+        val updated = p.copy(photoPaths = p.photoPaths - path)
+        pin.value = updated
+        viewModelScope.launch {
+            pinRepository.upsert(updated)
+            PhotoStore.delete(path)
         }
     }
 }

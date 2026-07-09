@@ -17,7 +17,9 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): LoadstoneDatabase =
-        Room.databaseBuilder(context, LoadstoneDatabase::class.java, "loadstone.db").build()
+        Room.databaseBuilder(context, LoadstoneDatabase::class.java, "loadstone.db")
+            .addMigrations(LoadstoneDatabase.MIGRATION_1_2)
+            .build()
 
     @Provides
     fun providePinDao(db: LoadstoneDatabase): PinDao = db.pinDao()

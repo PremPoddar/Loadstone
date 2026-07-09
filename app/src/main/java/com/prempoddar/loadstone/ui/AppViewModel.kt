@@ -36,7 +36,7 @@ class AppViewModel @Inject constructor(
         _pendingImport.value = null
     }
 
-    fun saveImported(name: String, note: String?, category: PinCategory) {
+    fun saveImported(name: String, note: String?, category: PinCategory, photoPaths: List<String>) {
         val (lat, lon) = _pendingImport.value ?: return
         viewModelScope.launch {
             pinRepository.upsert(
@@ -47,6 +47,7 @@ class AppViewModel @Inject constructor(
                     longitude = lon,
                     accuracyMeters = 0f,
                     category = category,
+                    photoPaths = photoPaths,
                 ),
             )
             _pendingImport.value = null

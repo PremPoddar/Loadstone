@@ -15,7 +15,13 @@ data class PinEntity(
     val accuracyMeters: Float,
     val category: String,
     val createdAt: Long,
+    val elevationMeters: Double? = null,
+    // Newline-separated file paths (app-generated names never contain newlines).
+    val photoPaths: String = "",
 )
+
+private fun encodePhotos(paths: List<String>) = paths.joinToString("\n")
+private fun decodePhotos(raw: String) = raw.split("\n").filter { it.isNotBlank() }
 
 fun PinEntity.toDomain() = Pin(
     id = id,
@@ -25,6 +31,8 @@ fun PinEntity.toDomain() = Pin(
     longitude = longitude,
     accuracyMeters = accuracyMeters,
     category = runCatching { PinCategory.valueOf(category) }.getOrDefault(PinCategory.PIN),
+    elevationMeters = elevationMeters,
+    photoPaths = decodePhotos(photoPaths),
     createdAt = createdAt,
 )
 
@@ -37,4 +45,6 @@ fun Pin.toEntity() = PinEntity(
     accuracyMeters = accuracyMeters,
     category = category.name,
     createdAt = createdAt,
+    elevationMeters = elevationMeters,
+    photoPaths = encodePhotos(photoPaths),
 )

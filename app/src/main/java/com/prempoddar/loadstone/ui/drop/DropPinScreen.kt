@@ -12,6 +12,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material3.AssistChip
+import androidx.compose.material.icons.filled.Terrain
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,6 +40,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.prempoddar.loadstone.core.format.UnitFormatter
+import com.prempoddar.loadstone.ui.LocalUnitSystem
 import com.prempoddar.loadstone.ui.components.AccuracyDial
 import com.prempoddar.loadstone.ui.permission.rememberLocationPermissionState
 import kotlin.math.roundToInt
@@ -121,11 +125,21 @@ fun DropPinScreen(
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "The longer you wait, the sharper it gets.",
+                    "Sharpest outdoors with a clear view of the sky.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
+                val elevation = state.fix?.altitudeMeters
+                if (elevation != null) {
+                    val unit = LocalUnitSystem.current
+                    Spacer(Modifier.height(10.dp))
+                    AssistChip(
+                        onClick = {},
+                        leadingIcon = { Icon(Icons.Filled.Terrain, contentDescription = null) },
+                        label = { Text("Elevation ~${UnitFormatter.formatElevation(elevation, unit)}") },
+                    )
+                }
             }
 
             Button(
@@ -145,9 +159,9 @@ fun DropPinScreen(
     if (showSheet) {
         SavePinSheet(
             onDismiss = { showSheet = false },
-            onSave = { name, note, category ->
+            onSave = { name, note, category, photoPaths ->
                 showSheet = false
-                viewModel.savePin(name, note, category, onSaved)
+                viewModel.savePin(name, note, category, photoPaths, onSaved)
             },
         )
     }

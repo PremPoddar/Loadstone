@@ -17,4 +17,10 @@ object UnitFormatter {
             else String.format(Locale.US, "%.1f mi", feet / 5280.0)
         }
     }
+
+    /** Elevation is always shown in plain meters or feet (never km/mi). */
+    fun formatElevation(meters: Double, system: UnitSystem): String = when (system) {
+        UnitSystem.METRIC -> "${meters.roundToInt()} m"
+        UnitSystem.IMPERIAL -> "${(meters * 3.28084).roundToInt()} ft"
+    }
 }

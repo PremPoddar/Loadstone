@@ -9,5 +9,7 @@ data class Pin(
     val longitude: Double,
     val accuracyMeters: Float,
     val category: PinCategory = PinCategory.PIN,
+    val elevationMeters: Double? = null,
+    val photoPaths: List<String> = emptyList(),
     val createdAt: Long = System.currentTimeMillis(),
 )

@@ -48,7 +48,13 @@ class DropPinViewModel @Inject constructor(
         }
     }
 
-    fun savePin(name: String, note: String?, category: PinCategory, onSaved: () -> Unit) {
+    fun savePin(
+        name: String,
+        note: String?,
+        category: PinCategory,
+        photoPaths: List<String>,
+        onSaved: () -> Unit,
+    ) {
         val fix = _state.value.fix ?: return
         _state.value = _state.value.copy(saving = true)
         viewModelScope.launch {
@@ -60,6 +66,8 @@ class DropPinViewModel @Inject constructor(
                     longitude = fix.longitude,
                     accuracyMeters = fix.estAccuracyMeters,
                     category = category,
+                    elevationMeters = fix.altitudeMeters,
+                    photoPaths = photoPaths,
                 ),
             )
             onSaved()

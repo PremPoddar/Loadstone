@@ -60,8 +60,8 @@ class MainActivity : ComponentActivity() {
                         if (pendingImport != null) {
                             SavePinSheet(
                                 onDismiss = { appViewModel.clearImport() },
-                                onSave = { name, note, category ->
-                                    appViewModel.saveImported(name, note, category)
+                                onSave = { name, note, category, photoPaths ->
+                                    appViewModel.saveImported(name, note, category, photoPaths)
                                 },
                             )
                         }
