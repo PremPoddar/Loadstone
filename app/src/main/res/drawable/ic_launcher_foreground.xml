@@ -1,0 +1,16 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Compass needle: amber north, slate south, on the adaptive background. -->
+    <path
+        android:pathData="M54,24 L61,54 L47,54 Z"
+        android:fillColor="#FFC107" />
+    <path
+        android:pathData="M54,84 L61,54 L47,54 Z"
+        android:fillColor="#ECEFF1" />
+    <path
+        android:pathData="M54,50 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0"
+        android:fillColor="#FFFFFF" />
+</vector>

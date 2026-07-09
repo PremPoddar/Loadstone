@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base theme applied before Compose takes over. Keeps the window
+         background/status bar sane during launch. Compose supplies the real
+         Material 3 color scheme (dynamic + light/dark). -->
+    <style name="Theme.Loadstone" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowBackground">@color/loadstone_window_background</item>
+    </style>
+</resources>
