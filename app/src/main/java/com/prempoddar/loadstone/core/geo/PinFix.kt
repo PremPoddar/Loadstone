@@ -6,6 +6,7 @@ data class PinFix(
     val longitude: Double,
     val estAccuracyMeters: Float,
     val sampleCount: Int,
+    val altitudeMeters: Double? = null,
 )
 
 /** A single raw GPS fix fed into [LocationAveraging]. */
@@ -14,4 +15,5 @@ data class RawFix(
     val longitude: Double,
     val accuracyMeters: Float,
     val timestampMs: Long,
+    val altitudeMeters: Double? = null,
 )

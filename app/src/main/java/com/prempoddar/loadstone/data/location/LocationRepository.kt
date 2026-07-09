@@ -28,18 +28,31 @@ class LocationRepository @Inject constructor(
     @SuppressLint("MissingPermission")
     fun averagedFixes(): Flow<PinFix> = callbackFlow {
         val averaging = LocationAveraging()
+
+        fun ingest(loc: Location) {
+            if (!loc.hasAccuracy()) return
+            averaging.add(
+                RawFix(
+                    latitude = loc.latitude,
+                    longitude = loc.longitude,
+                    accuracyMeters = loc.accuracy,
+                    timestampMs = loc.time,
+                    altitudeMeters = if (loc.hasAltitude()) loc.altitude else null,
+                ),
+            )
+            averaging.current()?.let { trySend(it) }
+        }
+
+        // Warm start: show the last-known position immediately while GPS locks on.
+        fused.lastLocation.addOnSuccessListener { loc -> loc?.let(::ingest) }
+
         val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000L)
             .setMinUpdateIntervalMillis(500L)
+            .setWaitForAccurateLocation(false)
             .build()
         val callback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
-                for (loc in result.locations) {
-                    if (!loc.hasAccuracy()) continue
-                    averaging.add(
-                        RawFix(loc.latitude, loc.longitude, loc.accuracy, loc.time),
-                    )
-                    averaging.current()?.let { trySend(it) }
-                }
+                result.locations.forEach(::ingest)
             }
         }
         fused.requestLocationUpdates(request, callback, null)
