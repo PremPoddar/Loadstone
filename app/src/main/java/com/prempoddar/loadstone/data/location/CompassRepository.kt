@@ -49,7 +49,8 @@ class CompassRepository @Inject constructor(
         var smoothSin = 0.0
         var smoothCos = 0.0
         var initialized = false
-        val alpha = 0.15
+        // Heavier smoothing for a steady, confident arrow (the UI spring adds the rest).
+        val alpha = 0.08
 
         val listener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
@@ -75,7 +76,7 @@ class CompassRepository @Inject constructor(
             }
         }
 
-        sensorManager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_GAME)
+        sensorManager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI)
         awaitClose { sensorManager.unregisterListener(listener) }
     }
 }

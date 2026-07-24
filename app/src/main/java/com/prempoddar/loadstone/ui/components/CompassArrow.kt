@@ -1,7 +1,9 @@
 package com.prempoddar.loadstone.ui.components
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
@@ -16,18 +18,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.unit.dp
-import kotlin.math.cos
 import kotlin.math.min
-import kotlin.math.sin
 
 /**
- * Large follow-back compass. The needle rotates to [angleDegrees] (0 = dead
- * ahead) taking the shortest path, and turns green when the user has arrived.
+ * Large follow-back arrow. A single bold arrow points to the pin (0° = dead ahead),
+ * rotating the shortest way with a confident, critically-damped spring, and turns
+ * green on arrival.
  */
 @Composable
 fun CompassArrow(
@@ -35,60 +39,74 @@ fun CompassArrow(
     arrived: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    // Unwrap the target angle so the needle never spins the long way around.
+    // Unwrap the target angle so the arrow never spins the long way around.
     var cumulative by remember { mutableFloatStateOf(angleDegrees) }
     LaunchedEffect(angleDegrees) {
         val delta = ((angleDegrees - cumulative + 540f) % 360f) - 180f
         cumulative += delta
     }
-    val animated by animateFloatAsState(cumulative, tween(320), label = "needle")
+    // Critically damped, deliberate settle — steady, not springy or twitchy.
+    val animated by animateFloatAsState(
+        targetValue = cumulative,
+        animationSpec = spring(dampingRatio = 1f, stiffness = Spring.StiffnessMediumLow),
+        label = "arrow",
+    )
 
-    val amber = Color(0xFFFFB300)
-    val green = Color(0xFF2E9E5B)
-    val needleColor by animateColorAsState(if (arrived) green else amber, tween(500), label = "needle-color")
-    val tail = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
-    val bezel = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
-    val tickColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val amberTop = Color(0xFFFFC64D)
+    val amberBottom = Color(0xFFF59E00)
+    val greenTop = Color(0xFF57C98A)
+    val greenBottom = Color(0xFF2E9E5B)
+    val fillTop by animateColorAsState(if (arrived) greenTop else amberTop, tween(500), label = "top")
+    val fillBottom by animateColorAsState(if (arrived) greenBottom else amberBottom, tween(500), label = "bot")
+
+    val backdrop = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+    val ring = MaterialTheme.colorScheme.outline.copy(alpha = 0.28f)
 
     Box(modifier = modifier.size(300.dp), contentAlignment = Alignment.Center) {
         Canvas(modifier = Modifier.size(300.dp)) {
             val c = Offset(size.width / 2, size.height / 2)
             val r = min(size.width, size.height) / 2
 
-            drawCircle(bezel, radius = r * 0.98f, center = c, style = Stroke(width = 3f))
+            // Soft circular backdrop + thin ring for grounding.
+            drawCircle(backdrop, radius = r * 0.94f, center = c)
+            drawCircle(ring, radius = r * 0.94f, center = c, style = Stroke(width = 3f))
 
-            // Cardinal + minor ticks around the bezel.
-            for (i in 0 until 72) {
-                val major = i % 18 == 0
-                val angle = Math.toRadians(i * 5.0)
-                val outer = r * 0.98f
-                val inner = r * (if (major) 0.86f else 0.92f)
-                val sinA = sin(angle).toFloat()
-                val cosA = cos(angle).toFloat()
-                drawLine(
-                    color = if (major) tickColor else tickColor.copy(alpha = 0.4f),
-                    start = Offset(c.x + sinA * inner, c.y - cosA * inner),
-                    end = Offset(c.x + sinA * outer, c.y - cosA * outer),
-                    strokeWidth = if (major) 4f else 2f,
+            rotate(animated, pivot = c) {
+                val tipY = c.y - r * 0.66f
+                val headHalf = r * 0.32f
+                val headBaseY = c.y - r * 0.04f
+                val shaftHalf = r * 0.12f
+                val baseY = c.y + r * 0.62f
+
+                val arrow = Path().apply {
+                    moveTo(c.x, tipY)
+                    lineTo(c.x + headHalf, headBaseY)
+                    lineTo(c.x + shaftHalf, headBaseY)
+                    lineTo(c.x + shaftHalf, baseY)
+                    lineTo(c.x - shaftHalf, baseY)
+                    lineTo(c.x - shaftHalf, headBaseY)
+                    lineTo(c.x - headHalf, headBaseY)
+                    close()
+                }
+                // Soft drop shadow for depth (confident, dimensional).
+                val shadow = Path().apply { addPath(arrow, Offset(0f, r * 0.02f)) }
+                drawPath(shadow, Color.Black.copy(alpha = 0.12f))
+                // Body with a vertical gradient.
+                drawPath(
+                    path = arrow,
+                    brush = Brush.verticalGradient(
+                        colors = listOf(fillTop, fillBottom),
+                        startY = tipY,
+                        endY = baseY,
+                    ),
+                )
+                // Crisp same-color rounded outline to soften the edges.
+                drawPath(
+                    path = arrow,
+                    color = fillBottom,
+                    style = Stroke(width = r * 0.03f, join = StrokeJoin.Round, cap = StrokeCap.Round),
                 )
             }
-
-            // Needle, rotated to the target angle.
-            rotate(animated, pivot = c) {
-                val tip = Offset(c.x, c.y - r * 0.72f)
-                val baseL = Offset(c.x - r * 0.16f, c.y)
-                val baseR = Offset(c.x + r * 0.16f, c.y)
-                val head = Path().apply {
-                    moveTo(tip.x, tip.y); lineTo(baseL.x, baseL.y); lineTo(baseR.x, baseR.y); close()
-                }
-                drawPath(head, needleColor)
-                // Muted tail.
-                val tailPath = Path().apply {
-                    moveTo(c.x, c.y + r * 0.62f); lineTo(baseL.x, baseL.y); lineTo(baseR.x, baseR.y); close()
-                }
-                drawPath(tailPath, tail)
-            }
-            drawCircle(needleColor, radius = r * 0.06f, center = c)
         }
     }
 }
