@@ -102,10 +102,7 @@ fun DropPinScreen(
                 accuracyMeters = state.fix?.estAccuracyMeters,
                 stabilized = state.stabilized,
             ) {
-                DialCenter(
-                    accuracyMeters = state.fix?.estAccuracyMeters,
-                    sampleCount = state.fix?.sampleCount ?: 0,
-                )
+                DialCenter(accuracyMeters = state.fix?.estAccuracyMeters)
             }
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -130,6 +127,14 @@ fun DropPinScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
+                state.fix?.let { fix ->
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        if (fix.sampleCount == 1) "1 reading" else "${fix.sampleCount} readings",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.outline,
+                    )
+                }
                 val elevation = state.fix?.altitudeMeters
                 if (elevation != null) {
                     val unit = LocalUnitSystem.current
@@ -138,6 +143,13 @@ fun DropPinScreen(
                         onClick = {},
                         leadingIcon = { Icon(Icons.Filled.Terrain, contentDescription = null) },
                         label = { Text("Elevation ~${UnitFormatter.formatElevation(elevation, unit)}") },
+                    )
+                    Text(
+                        "Elevation is approximate.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 4.dp),
                     )
                 }
             }
@@ -168,7 +180,7 @@ fun DropPinScreen(
 }
 
 @Composable
-private fun DialCenter(accuracyMeters: Float?, sampleCount: Int) {
+private fun DialCenter(accuracyMeters: Float?) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         if (accuracyMeters == null) {
             Icon(
@@ -179,16 +191,14 @@ private fun DialCenter(accuracyMeters: Float?, sampleCount: Int) {
         } else {
             Text(
                 "±${accuracyMeters.roundToInt()}",
-                fontSize = 56.sp,
+                fontSize = 46.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onBackground,
             )
-            Text("meters", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(4.dp))
             Text(
-                "$sampleCount readings",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.outline,
+                "meters",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

@@ -40,11 +40,12 @@ fun AccuracyDial(
     val green = Color(0xFF2E9E5B)
     val ringColor by animateColorAsState(if (stabilized) green else amber, tween(600), label = "ring")
 
-    // Map accuracy (2..40 m) to a normalized radius fraction (0.12..0.92).
+    // Map accuracy (2..40 m) to a radius fraction, kept large enough that the ring
+    // always encircles the centered readout rather than shrinking over the text.
     val target = accuracyMeters?.let {
         val clamped = it.coerceIn(2f, 40f)
-        0.12f + (clamped - 2f) / (40f - 2f) * 0.80f
-    } ?: 0.95f
+        0.60f + (clamped - 2f) / (40f - 2f) * 0.34f // 0.60 .. 0.94
+    } ?: 0.94f
     val radiusFraction by animateFloatAsState(target, tween(700), label = "radius")
 
     val transition = rememberInfiniteTransition(label = "sweep")
