@@ -1,9 +1,6 @@
 package com.prempoddar.loadstone.ui.navigate
 
-import android.content.Intent
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,43 +10,29 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Terrain
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -57,55 +40,30 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.prempoddar.loadstone.core.format.UnitFormatter
-import com.prempoddar.loadstone.data.photo.PhotoStore
-import com.prempoddar.loadstone.data.pin.Pin
-import com.prempoddar.loadstone.share.AppLinks
 import com.prempoddar.loadstone.ui.LocalUnitSystem
+import com.prempoddar.loadstone.ui.components.CategoryBadge
 import com.prempoddar.loadstone.ui.components.CompassArrow
-import com.prempoddar.loadstone.ui.components.PhotoRow
-import com.prempoddar.loadstone.ui.components.PhotoViewerDialog
 import com.prempoddar.loadstone.ui.permission.rememberLocationPermissionState
-import java.io.File
+import com.prempoddar.loadstone.ui.util.Haptics
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NavigateScreen(
     onBack: () -> Unit,
     viewModel: NavigateViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
+    val arcHintVisible by viewModel.arcHintVisible.collectAsState()
     val permission = rememberLocationPermissionState()
     val unit = LocalUnitSystem.current
-    val haptics = LocalHapticFeedback.current
-    val context = LocalContext.current
     val view = LocalView.current
 
-    var menuOpen by remember { mutableStateOf(false) }
-    var confirmDelete by remember { mutableStateOf(false) }
     var wasArrived by remember { mutableStateOf(false) }
-    var viewerPath by remember { mutableStateOf<String?>(null) }
-    var pendingFile by remember { mutableStateOf<File?>(null) }
-
-    val cameraLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.TakePicture(),
-    ) { success ->
-        val file = pendingFile
-        if (success && file != null) viewModel.addPhoto(file.absolutePath)
-        else if (file != null) PhotoStore.delete(file.absolutePath)
-        pendingFile = null
-    }
-
-    fun launchCamera() {
-        val file = PhotoStore.newPhotoFile(context)
-        pendingFile = file
-        cameraLauncher.launch(PhotoStore.uriFor(context, file))
-    }
 
     LaunchedEffect(permission.hasPermission) {
         if (permission.hasPermission) viewModel.start()
     }
     LaunchedEffect(state.arrived) {
-        if (state.arrived && !wasArrived) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        if (state.arrived && !wasArrived) Haptics.arrive(view)
         wasArrived = state.arrived
     }
     DisposableEffect(Unit) {
@@ -113,178 +71,181 @@ fun NavigateScreen(
         onDispose { view.keepScreenOn = false }
     }
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text(state.pin?.name ?: "Navigate") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    val pin = state.pin
-                    if (pin != null) {
-                        IconButton(onClick = { menuOpen = true }) {
-                            Icon(Icons.Filled.MoreVert, contentDescription = "More")
-                        }
-                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                            DropdownMenuItem(
-                                text = { Text("Share") },
-                                leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
-                                onClick = { menuOpen = false; sharePin(context, pin) },
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Delete") },
-                                leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
-                                onClick = { menuOpen = false; confirmDelete = true },
-                            )
-                        }
-                    }
-                },
-            )
-        },
-    ) { padding ->
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         if (!permission.hasPermission) {
-            Column(
-                modifier = Modifier.fillMaxSize().padding(padding).padding(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Text(
-                    "Loadstone needs location access to point you to this pin.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.height(16.dp))
-                TextButton(onClick = permission.request) { Text("Grant location access") }
-            }
-            return@Scaffold
+            PermissionGate(onGrant = permission.request, onBack = onBack)
+            return@Box
         }
 
         val pin = state.pin
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp),
+                .safeDrawingPadding()
+                .padding(horizontal = 24.dp, vertical = 16.dp),
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                CompassArrow(angleDegrees = state.arrowAngle, arrived = state.arrived)
-                if (state.arrived) {
-                    Icon(
-                        Icons.Filled.CheckCircle,
-                        contentDescription = null,
-                        tint = Color(0xFF2E9E5B),
-                        modifier = Modifier.size(72.dp),
-                    )
-                }
+            if (arcHintVisible) {
+                ArcHintBanner(onDismiss = {
+                    Haptics.tap(view)
+                    viewModel.dismissArcHint()
+                })
+                Spacer(Modifier.height(20.dp))
             }
 
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            // Header — what you're finding.
+            Text(
+                "FINDING",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                letterSpacing = 2.sp,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                pin?.name ?: " ",
+                style = MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            if (pin != null) {
+                Spacer(Modifier.height(16.dp))
+                CategoryBadge(pin.category, size = 56)
+            }
+
+            // Arrow.
+            Box(
+                modifier = Modifier.fillMaxWidth().weight(1f),
+                contentAlignment = Alignment.Center,
+            ) {
+                CompassArrow(
+                    angleDegrees = state.arrowAngle,
+                    arrived = state.arrived,
+                    accuracyMeters = state.currentAccuracyMeters,
+                )
+            }
+
+            // Distance.
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 if (state.arrived) {
                     Text(
-                        "You've arrived",
-                        fontSize = 30.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF2E9E5B),
+                        "You're here",
+                        fontSize = 40.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
                     )
                 } else {
+                    val parts = state.distanceMeters?.let { UnitFormatter.distanceParts(it, unit) }
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            parts?.first ?: "—",
+                            fontSize = 64.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        if (parts != null) {
+                            Spacer(Modifier.size(6.dp))
+                            Text(
+                                parts.second,
+                                fontSize = 26.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(bottom = 10.dp),
+                            )
+                        }
+                    }
                     Text(
-                        state.distanceMeters?.let { UnitFormatter.formatDistance(it, unit) } ?: "—",
-                        fontSize = 48.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onBackground,
-                    )
-                    Text(
-                        "to " + (pin?.name ?: "pin"),
-                        style = MaterialTheme.typography.bodyLarge,
+                        "ahead",
+                        style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-            }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                state.currentAccuracyMeters?.let { acc ->
-                    AssistChip(
-                        onClick = {},
-                        label = { Text("GPS ±${acc.toInt()} m") },
-                        colors = AssistChipDefaults.assistChipColors(),
-                    )
-                }
                 pin?.elevationMeters?.let { elev ->
-                    AssistChip(
-                        onClick = {},
-                        leadingIcon = { Icon(Icons.Filled.Terrain, contentDescription = null) },
-                        label = { Text("~${UnitFormatter.formatElevation(elev, unit)}") },
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "~${UnitFormatter.formatElevation(elev, unit)} elevation · approximate",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.outline,
                     )
                 }
             }
-            if (pin?.elevationMeters != null) {
-                Text(
-                    "Elevation is approximate.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline,
-                )
-            }
 
-            AnimatedVisibility(visible = state.compassAccuracyClass <= 1) {
-                Text(
-                    "Compass needs calibration — wave your phone in a figure 8.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
-            }
+            Spacer(Modifier.height(28.dp))
 
-            if (pin != null) {
-                PhotoRow(
-                    paths = pin.photoPaths,
-                    modifier = Modifier.fillMaxWidth(),
-                    onAdd = { launchCamera() },
-                    onOpen = { viewerPath = it },
-                    onRemove = { viewModel.removePhoto(it) },
+            // Close.
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Surface(
+                    onClick = { Haptics.tap(view); onBack() },
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    modifier = Modifier.size(64.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Filled.Close,
+                            contentDescription = "Stop",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(28.dp),
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+private fun ArcHintBanner(onDismiss: () -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                Icons.Filled.MyLocation,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(22.dp),
+            )
+            Spacer(Modifier.size(12.dp))
+            Text(
+                "The arc shows where your pin might be — the weaker the GPS, the wider the arc.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(onClick = onDismiss) {
+                Icon(
+                    Icons.Filled.Close,
+                    contentDescription = "Dismiss",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
     }
-
-    viewerPath?.let { path ->
-        PhotoViewerDialog(path = path, onDismiss = { viewerPath = null })
-    }
-
-    if (confirmDelete) {
-        AlertDialog(
-            onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete pin?") },
-            text = { Text("\"${state.pin?.name}\" will be removed.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirmDelete = false
-                    viewModel.delete(onBack)
-                }) { Text("Delete") }
-            },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } },
-        )
-    }
 }
 
-private fun sharePin(context: android.content.Context, pin: Pin) {
-    val link = AppLinks.shareUrl(pin.latitude, pin.longitude, pin.name, pin.note)
-    val body = buildString {
-        append(pin.name)
-        pin.note?.takeIf { it.isNotBlank() }?.let { append('\n').append(it) }
-        append('\n').append(link)
+@Composable
+private fun PermissionGate(onGrant: () -> Unit, onBack: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            "Loadstone needs location access to point you to this pin.",
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(16.dp))
+        TextButton(onClick = onGrant) { Text("Grant location access") }
+        TextButton(onClick = onBack) { Text("Back") }
     }
-    val intent = Intent(Intent.ACTION_SEND).apply {
-        type = "text/plain"
-        putExtra(Intent.EXTRA_TEXT, body)
-        putExtra(Intent.EXTRA_SUBJECT, pin.name)
-    }
-    context.startActivity(Intent.createChooser(intent, "Share pin"))
 }

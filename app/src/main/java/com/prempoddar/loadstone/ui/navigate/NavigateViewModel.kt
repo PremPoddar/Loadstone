@@ -7,9 +7,9 @@ import androidx.lifecycle.viewModelScope
 import com.prempoddar.loadstone.core.geo.GeoMath
 import com.prempoddar.loadstone.data.location.CompassRepository
 import com.prempoddar.loadstone.data.location.LocationRepository
-import com.prempoddar.loadstone.data.photo.PhotoStore
 import com.prempoddar.loadstone.data.pin.Pin
 import com.prempoddar.loadstone.data.pin.PinRepository
+import com.prempoddar.loadstone.data.settings.SettingsRepository
 import com.prempoddar.loadstone.ui.nav.Routes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -43,7 +44,14 @@ class NavigateViewModel @Inject constructor(
     private val pinRepository: PinRepository,
     private val locationRepository: LocationRepository,
     private val compassRepository: CompassRepository,
+    settingsRepository: SettingsRepository,
 ) : ViewModel() {
+
+    val arcHintVisible: StateFlow<Boolean> = settingsRepository.settings
+        .map { !it.arcHintDismissed }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    private val settings = settingsRepository
 
     private val pinId: Long = savedStateHandle[Routes.NAVIGATE_ARG_PIN_ID] ?: -1L
     private val pin = MutableStateFlow<Pin?>(null)
@@ -95,27 +103,7 @@ class NavigateViewModel @Inject constructor(
         }
     }
 
-    fun delete(onDeleted: () -> Unit) {
-        viewModelScope.launch {
-            pinRepository.delete(pinId)
-            onDeleted()
-        }
-    }
-
-    fun addPhoto(path: String) {
-        val p = pin.value ?: return
-        val updated = p.copy(photoPaths = p.photoPaths + path)
-        pin.value = updated
-        viewModelScope.launch { pinRepository.upsert(updated) }
-    }
-
-    fun removePhoto(path: String) {
-        val p = pin.value ?: return
-        val updated = p.copy(photoPaths = p.photoPaths - path)
-        pin.value = updated
-        viewModelScope.launch {
-            pinRepository.upsert(updated)
-            PhotoStore.delete(path)
-        }
+    fun dismissArcHint() {
+        viewModelScope.launch { settings.setArcHintDismissed(true) }
     }
 }

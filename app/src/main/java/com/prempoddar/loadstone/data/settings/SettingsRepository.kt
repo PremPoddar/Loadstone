@@ -18,6 +18,7 @@ data class Settings(
     val unitSystem: UnitSystem,
     val themeMode: ThemeMode,
     val onboardingComplete: Boolean,
+    val arcHintDismissed: Boolean = false,
 )
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -30,6 +31,7 @@ class SettingsRepository @Inject constructor(
         val UNIT = stringPreferencesKey("unit_system")
         val THEME = stringPreferencesKey("theme_mode")
         val ONBOARDING = booleanPreferencesKey("onboarding_complete")
+        val ARC_HINT = booleanPreferencesKey("arc_hint_dismissed")
     }
 
     val settings: Flow<Settings> = context.dataStore.data.map { prefs ->
@@ -37,7 +39,12 @@ class SettingsRepository @Inject constructor(
             unitSystem = prefs[Keys.UNIT]?.let { UnitSystem.valueOf(it) } ?: defaultUnitSystem(),
             themeMode = prefs[Keys.THEME]?.let { ThemeMode.valueOf(it) } ?: ThemeMode.SYSTEM,
             onboardingComplete = prefs[Keys.ONBOARDING] ?: false,
+            arcHintDismissed = prefs[Keys.ARC_HINT] ?: false,
         )
+    }
+
+    suspend fun setArcHintDismissed(dismissed: Boolean) {
+        context.dataStore.edit { it[Keys.ARC_HINT] = dismissed }
     }
 
     suspend fun setUnitSystem(system: UnitSystem) {
