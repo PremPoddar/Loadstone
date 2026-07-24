@@ -39,11 +39,13 @@ import java.io.File
 fun SavePinSheet(
     onDismiss: () -> Unit,
     onSave: (name: String, note: String?, category: PinCategory, photoPaths: List<String>) -> Unit,
+    initialName: String = "",
+    initialNote: String = "",
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
-    var name by remember { mutableStateOf("") }
-    var note by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf(initialName) }
+    var note by remember { mutableStateOf(initialNote) }
     var category by remember { mutableStateOf(PinCategory.PIN) }
     var photos by remember { mutableStateOf(listOf<String>()) }
     var pendingFile by remember { mutableStateOf<File?>(null) }

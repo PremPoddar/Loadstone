@@ -12,10 +12,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
-import com.prempoddar.loadstone.core.format.CoordinateFormat
 import com.prempoddar.loadstone.data.settings.Settings
 import com.prempoddar.loadstone.data.settings.ThemeMode
 import com.prempoddar.loadstone.data.settings.UnitSystem
+import com.prempoddar.loadstone.share.AppLinks
 import com.prempoddar.loadstone.ui.AppViewModel
 import com.prempoddar.loadstone.ui.LocalUnitSystem
 import com.prempoddar.loadstone.ui.drop.SavePinSheet
@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val importedCoords = parseIncomingCoordinates(intent)
+        val imported = parseIncomingLink(intent)
 
         setContent {
             val appViewModel: AppViewModel = hiltViewModel()
@@ -37,8 +37,8 @@ class MainActivity : ComponentActivity() {
             val pendingImport by appViewModel.pendingImport.collectAsState()
             val current: Settings? = settings
 
-            LaunchedEffect(importedCoords) {
-                importedCoords?.let { appViewModel.onImportCoordinates(it.first, it.second) }
+            LaunchedEffect(imported) {
+                imported?.let { appViewModel.onImport(it) }
             }
 
             val systemDark = isSystemInDarkTheme()
@@ -57,12 +57,14 @@ class MainActivity : ComponentActivity() {
                         val start = if (current.onboardingComplete) Routes.HOME else Routes.ONBOARDING
                         LoadstoneNavHost(navController = navController, startDestination = start)
 
-                        if (pendingImport != null) {
+                        pendingImport?.let { pending ->
                             SavePinSheet(
                                 onDismiss = { appViewModel.clearImport() },
                                 onSave = { name, note, category, photoPaths ->
                                     appViewModel.saveImported(name, note, category, photoPaths)
                                 },
+                                initialName = pending.name.orEmpty(),
+                                initialNote = pending.note.orEmpty(),
                             )
                         }
                     }
@@ -71,14 +73,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /** Extracts a lat/lon pair from a geo: VIEW or text/plain SEND intent, if present. */
-    private fun parseIncomingCoordinates(intent: Intent?): Pair<Double, Double>? {
-        intent ?: return null
-        val raw = when (intent.action) {
-            Intent.ACTION_VIEW -> intent.dataString
-            Intent.ACTION_SEND -> intent.getStringExtra(Intent.EXTRA_TEXT)
-            else -> null
-        } ?: return null
-        return CoordinateFormat.parse(raw)
+    /** Extracts an imported pin from a Loadstone App Link, if the app was opened by one. */
+    private fun parseIncomingLink(intent: Intent?): AppViewModel.PendingImport? {
+        val data = intent?.takeIf { it.action == Intent.ACTION_VIEW }?.data ?: return null
+        val parsed = AppLinks.parse(data) ?: return null
+        return AppViewModel.PendingImport(parsed.lat, parsed.lon, parsed.name, parsed.note)
     }
 }

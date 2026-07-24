@@ -25,11 +25,18 @@ class AppViewModel @Inject constructor(
     val settings: StateFlow<Settings?> = settingsRepository.settings
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    private val _pendingImport = MutableStateFlow<Pair<Double, Double>?>(null)
-    val pendingImport: StateFlow<Pair<Double, Double>?> = _pendingImport.asStateFlow()
+    data class PendingImport(
+        val lat: Double,
+        val lon: Double,
+        val name: String? = null,
+        val note: String? = null,
+    )
 
-    fun onImportCoordinates(lat: Double, lon: Double) {
-        _pendingImport.value = lat to lon
+    private val _pendingImport = MutableStateFlow<PendingImport?>(null)
+    val pendingImport: StateFlow<PendingImport?> = _pendingImport.asStateFlow()
+
+    fun onImport(pending: PendingImport) {
+        _pendingImport.value = pending
     }
 
     fun clearImport() {
@@ -37,7 +44,9 @@ class AppViewModel @Inject constructor(
     }
 
     fun saveImported(name: String, note: String?, category: PinCategory, photoPaths: List<String>) {
-        val (lat, lon) = _pendingImport.value ?: return
+        val pending = _pendingImport.value ?: return
+        val lat = pending.lat
+        val lon = pending.lon
         viewModelScope.launch {
             pinRepository.upsert(
                 Pin(

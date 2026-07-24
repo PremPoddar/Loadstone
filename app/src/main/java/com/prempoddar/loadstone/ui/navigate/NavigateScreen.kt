@@ -56,10 +56,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.prempoddar.loadstone.core.format.CoordinateFormat
 import com.prempoddar.loadstone.core.format.UnitFormatter
 import com.prempoddar.loadstone.data.photo.PhotoStore
 import com.prempoddar.loadstone.data.pin.Pin
+import com.prempoddar.loadstone.share.AppLinks
 import com.prempoddar.loadstone.ui.LocalUnitSystem
 import com.prempoddar.loadstone.ui.components.CompassArrow
 import com.prempoddar.loadstone.ui.components.PhotoRow
@@ -224,6 +224,13 @@ fun NavigateScreen(
                     )
                 }
             }
+            if (pin?.elevationMeters != null) {
+                Text(
+                    "Elevation is approximate.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline,
+                )
+            }
 
             AnimatedVisibility(visible = state.compassAccuracyClass <= 1) {
                 Text(
@@ -268,11 +275,15 @@ fun NavigateScreen(
 }
 
 private fun sharePin(context: android.content.Context, pin: Pin) {
-    val coords = CoordinateFormat.format(pin.latitude, pin.longitude)
-    val text = "${pin.name} — $coords\ngeo:${pin.latitude},${pin.longitude}"
+    val link = AppLinks.shareUrl(pin.latitude, pin.longitude, pin.name, pin.note)
+    val body = buildString {
+        append(pin.name)
+        pin.note?.takeIf { it.isNotBlank() }?.let { append('\n').append(it) }
+        append('\n').append(link)
+    }
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"
-        putExtra(Intent.EXTRA_TEXT, text)
+        putExtra(Intent.EXTRA_TEXT, body)
         putExtra(Intent.EXTRA_SUBJECT, pin.name)
     }
     context.startActivity(Intent.createChooser(intent, "Share pin"))
