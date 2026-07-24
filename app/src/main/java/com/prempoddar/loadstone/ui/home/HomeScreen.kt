@@ -19,8 +19,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
@@ -46,14 +49,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.prempoddar.loadstone.core.format.UnitFormatter
 import com.prempoddar.loadstone.data.pin.Pin
+import com.prempoddar.loadstone.share.AppLinks
 import com.prempoddar.loadstone.ui.LocalUnitSystem
 import com.prempoddar.loadstone.ui.components.CategoryBadge
+import com.prempoddar.loadstone.ui.drop.SavePinSheet
 import com.prempoddar.loadstone.ui.permission.rememberLocationPermissionState
+import com.prempoddar.loadstone.ui.util.Haptics
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,10 +73,13 @@ fun HomeScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val permission = rememberLocationPermissionState()
+    val context = LocalContext.current
+    val view = LocalView.current
     LaunchedEffect(permission.hasPermission) {
         if (permission.hasPermission) viewModel.startLocationUpdates()
     }
     var pendingDelete by remember { mutableStateOf<Pin?>(null) }
+    var editing by remember { mutableStateOf<Pin?>(null) }
 
     Scaffold(
         topBar = {
@@ -83,7 +94,7 @@ fun HomeScreen(
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = onDropPin,
+                onClick = { Haptics.tap(view); onDropPin() },
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 text = { Text("Drop pin") },
             )
@@ -102,7 +113,10 @@ fun HomeScreen(
                     PinRow(
                         pin = item.pin,
                         distanceMeters = item.distanceMeters,
-                        onClick = { onOpenPin(item.pin.id) },
+                        onClick = { Haptics.tap(view); onOpenPin(item.pin.id) },
+                        onOpenMaps = { Haptics.tap(view); openInMaps(context, item.pin) },
+                        onShare = { Haptics.tap(view); sharePin(context, item.pin) },
+                        onEdit = { Haptics.tap(view); editing = item.pin },
                         onDelete = { pendingDelete = item.pin },
                     )
                 }
@@ -117,7 +131,7 @@ fun HomeScreen(
             text = { Text("\"${pin.name}\" will be removed. This can't be undone.") },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.delete(pin.id); pendingDelete = null
+                    Haptics.confirm(view); viewModel.delete(pin.id); pendingDelete = null
                 }) { Text("Delete") }
             },
             dismissButton = {
@@ -125,6 +139,44 @@ fun HomeScreen(
             },
         )
     }
+
+    editing?.let { pin ->
+        SavePinSheet(
+            onDismiss = { editing = null },
+            onSave = { name, note, category, photos ->
+                viewModel.updatePin(pin, name, note, category, photos)
+                editing = null
+            },
+            initialName = pin.name,
+            initialNote = pin.note.orEmpty(),
+            initialCategory = pin.category,
+            initialPhotos = pin.photoPaths,
+            title = "Edit pin",
+            saveLabel = "Save changes",
+        )
+    }
+}
+
+private fun openInMaps(context: android.content.Context, pin: Pin) {
+    val label = android.net.Uri.encode(pin.name)
+    val uri = android.net.Uri.parse("geo:${pin.latitude},${pin.longitude}?q=${pin.latitude},${pin.longitude}($label)")
+    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, uri)
+    runCatching { context.startActivity(intent) }
+}
+
+private fun sharePin(context: android.content.Context, pin: Pin) {
+    val link = AppLinks.shareUrl(pin.latitude, pin.longitude, pin.name, pin.note)
+    val body = buildString {
+        append(pin.name)
+        pin.note?.takeIf { it.isNotBlank() }?.let { append('\n').append(it) }
+        append('\n').append(link)
+    }
+    val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(android.content.Intent.EXTRA_TEXT, body)
+        putExtra(android.content.Intent.EXTRA_SUBJECT, pin.name)
+    }
+    runCatching { context.startActivity(android.content.Intent.createChooser(intent, "Share pin")) }
 }
 
 @Composable
@@ -132,6 +184,9 @@ private fun PinRow(
     pin: Pin,
     distanceMeters: Double?,
     onClick: () -> Unit,
+    onOpenMaps: () -> Unit,
+    onShare: () -> Unit,
+    onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val unit = LocalUnitSystem.current
@@ -188,6 +243,21 @@ private fun PinRow(
                     Icon(Icons.Filled.MoreVert, contentDescription = "More")
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    DropdownMenuItem(
+                        text = { Text("Open in Maps") },
+                        leadingIcon = { Icon(Icons.Filled.Map, contentDescription = null) },
+                        onClick = { menuOpen = false; onOpenMaps() },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Share") },
+                        leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
+                        onClick = { menuOpen = false; onShare() },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Edit") },
+                        leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
+                        onClick = { menuOpen = false; onEdit() },
+                    )
                     DropdownMenuItem(
                         text = { Text("Delete") },
                         leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },

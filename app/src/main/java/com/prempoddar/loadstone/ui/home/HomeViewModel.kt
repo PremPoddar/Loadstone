@@ -56,4 +56,23 @@ class HomeViewModel @Inject constructor(
     fun delete(id: Long) {
         viewModelScope.launch { pinRepository.delete(id) }
     }
+
+    fun updatePin(
+        original: Pin,
+        name: String,
+        note: String?,
+        category: com.prempoddar.loadstone.data.pin.PinCategory,
+        photoPaths: List<String>,
+    ) {
+        viewModelScope.launch {
+            pinRepository.upsert(
+                original.copy(
+                    name = name.trim().ifBlank { original.name },
+                    note = note?.trim()?.ifBlank { null },
+                    category = category,
+                    photoPaths = photoPaths,
+                ),
+            )
+        }
+    }
 }

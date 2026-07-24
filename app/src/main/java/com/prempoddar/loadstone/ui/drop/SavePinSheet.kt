@@ -26,12 +26,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.prempoddar.loadstone.data.photo.PhotoStore
 import com.prempoddar.loadstone.data.pin.PinCategory
 import com.prempoddar.loadstone.ui.components.PhotoRow
 import com.prempoddar.loadstone.ui.components.visual
+import com.prempoddar.loadstone.ui.util.Haptics
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -41,13 +43,18 @@ fun SavePinSheet(
     onSave: (name: String, note: String?, category: PinCategory, photoPaths: List<String>) -> Unit,
     initialName: String = "",
     initialNote: String = "",
+    initialCategory: PinCategory = PinCategory.PIN,
+    initialPhotos: List<String> = emptyList(),
+    title: String = "Save this spot",
+    saveLabel: String = "Save pin",
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
+    val view = LocalView.current
     var name by remember { mutableStateOf(initialName) }
     var note by remember { mutableStateOf(initialNote) }
-    var category by remember { mutableStateOf(PinCategory.PIN) }
-    var photos by remember { mutableStateOf(listOf<String>()) }
+    var category by remember { mutableStateOf(initialCategory) }
+    var photos by remember { mutableStateOf(initialPhotos) }
     var pendingFile by remember { mutableStateOf<File?>(null) }
 
     val cameraLauncher = rememberLauncherForActivityResult(
@@ -73,7 +80,7 @@ fun SavePinSheet(
                 .padding(bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text("Save this spot", style = MaterialTheme.typography.headlineSmall)
+            Text(title, style = MaterialTheme.typography.headlineSmall)
 
             OutlinedTextField(
                 value = name,
@@ -107,7 +114,7 @@ fun SavePinSheet(
                     val v = cat.visual()
                     FilterChip(
                         selected = category == cat,
-                        onClick = { category = cat },
+                        onClick = { Haptics.select(view); category = cat },
                         label = { Text(v.label) },
                         leadingIcon = { Icon(v.icon, contentDescription = null) },
                     )
@@ -115,13 +122,13 @@ fun SavePinSheet(
             }
 
             Button(
-                onClick = { onSave(name, note, category, photos) },
+                onClick = { Haptics.confirm(view); onSave(name, note, category, photos) },
                 enabled = name.isNotBlank(),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
             ) {
-                Text("Save pin")
+                Text(saveLabel)
             }
         }
     }
