@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -56,6 +57,7 @@ fun DropPinScreen(
     val state by viewModel.state.collectAsState()
     val permission = rememberLocationPermissionState()
     val haptics = LocalHapticFeedback.current
+    val view = LocalView.current
     var showSheet by remember { mutableStateOf(false) }
     var wasStable by remember { mutableStateOf(false) }
 
@@ -155,7 +157,7 @@ fun DropPinScreen(
             }
 
             Button(
-                onClick = { showSheet = true },
+                onClick = { com.prempoddar.loadstone.ui.util.Haptics.tap(view); showSheet = true },
                 enabled = state.canSave,
                 modifier = Modifier
                     .fillMaxWidth()
