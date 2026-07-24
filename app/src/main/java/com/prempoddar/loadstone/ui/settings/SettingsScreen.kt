@@ -1,5 +1,8 @@
 package com.prempoddar.loadstone.ui.settings
 
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -23,11 +26,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.prempoddar.loadstone.BuildConfig
 import com.prempoddar.loadstone.data.settings.ThemeMode
 import com.prempoddar.loadstone.data.settings.UnitSystem
+import com.prempoddar.loadstone.share.AppLinks
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,6 +41,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsState()
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -91,7 +97,7 @@ fun SettingsScreen(
 
             SettingSection(title = "About") {
                 Text(
-                    "Loadstone 1.0",
+                    "Loadstone ${BuildConfig.VERSION_NAME}",
                     style = MaterialTheme.typography.bodyLarge,
                 )
                 Spacer(Modifier.height(4.dp))
@@ -99,6 +105,19 @@ fun SettingsScreen(
                     "Drop a pin, follow it back. Loadstone waits for your GPS to sharpen so every saved spot is exact. Location is used only while the app is open.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    "Privacy policy",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clickable {
+                        runCatching {
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW, Uri.parse(AppLinks.privacyUrl())),
+                            )
+                        }
+                    },
                 )
             }
         }
