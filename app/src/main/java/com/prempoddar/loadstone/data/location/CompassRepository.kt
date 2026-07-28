@@ -49,8 +49,9 @@ class CompassRepository @Inject constructor(
         var smoothSin = 0.0
         var smoothCos = 0.0
         var initialized = false
-        // Heavier smoothing for a steady, confident arrow (the UI spring adds the rest).
-        val alpha = 0.08
+        // Balanced smoothing: steady but still responsive when you turn (the UI spring
+        // adds the final polish). Too-heavy smoothing made the arrow lag behind turns.
+        val alpha = 0.16
 
         val listener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
