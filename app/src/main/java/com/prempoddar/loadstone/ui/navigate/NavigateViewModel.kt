@@ -76,14 +76,18 @@ class NavigateViewModel @Inject constructor(
                 val distance = GeoMath.distanceMeters(
                     loc.latitude, loc.longitude, p.latitude, p.longitude,
                 )
-                val arrivedRadius = max(p.accuracyMeters.toDouble(), 5.0)
+                val currentAccuracy = if (loc.hasAccuracy()) loc.accuracy else null
+                val arrivedRadius = max(p.accuracyMeters.toDouble(), 6.0)
+                // Only declare arrival on a trustworthy fix — a coarse/uncertain fix must
+                // not claim you're there (this caused "arrived" when 50 m away).
+                val trustworthy = currentAccuracy != null && currentAccuracy <= ARRIVE_MAX_ACCURACY
                 NavigateUiState(
                     pin = p,
                     arrowAngle = GeoMath.arrowAngleDegrees(bearing, head.trueNorthDegrees.toDouble()).toFloat(),
                     distanceMeters = distance,
-                    currentAccuracyMeters = if (loc.hasAccuracy()) loc.accuracy else null,
+                    currentAccuracyMeters = currentAccuracy,
                     compassAccuracyClass = head.accuracyClass,
-                    arrived = distance <= arrivedRadius,
+                    arrived = trustworthy && distance <= arrivedRadius,
                 )
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), NavigateUiState())
@@ -105,5 +109,10 @@ class NavigateViewModel @Inject constructor(
 
     fun dismissArcHint() {
         viewModelScope.launch { settings.setArcHintDismissed(true) }
+    }
+
+    companion object {
+        /** Above this current-fix uncertainty we won't claim "arrived". */
+        const val ARRIVE_MAX_ACCURACY = 20f
     }
 }

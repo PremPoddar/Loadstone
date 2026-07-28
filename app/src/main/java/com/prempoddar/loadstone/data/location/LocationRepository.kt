@@ -2,6 +2,8 @@ package com.prempoddar.loadstone.data.location
 
 import android.annotation.SuppressLint
 import android.location.Location
+import android.os.Build
+import android.os.SystemClock
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -37,14 +39,17 @@ class LocationRepository @Inject constructor(
                     longitude = loc.longitude,
                     accuracyMeters = loc.accuracy,
                     timestampMs = loc.time,
-                    altitudeMeters = if (loc.hasAltitude()) loc.altitude else null,
+                    altitudeMeters = mslOrEllipsoidAltitude(loc),
                 ),
             )
             averaging.current()?.let { trySend(it) }
         }
 
-        // Warm start: show the last-known position immediately while GPS locks on.
-        fused.lastLocation.addOnSuccessListener { loc -> loc?.let(::ingest) }
+        // Warm start — but only from a genuinely recent fix, never a days-old cached
+        // one (that used to poison the average and cause false readings).
+        fused.lastLocation.addOnSuccessListener { loc ->
+            if (loc != null && isFresh(loc, maxAgeMs = 30_000)) ingest(loc)
+        }
 
         val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000L)
             .setMinUpdateIntervalMillis(500L)
@@ -52,7 +57,7 @@ class LocationRepository @Inject constructor(
             .build()
         val callback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
-                result.locations.forEach(::ingest)
+                result.locations.forEach { if (isFresh(it)) ingest(it) }
             }
         }
         fused.requestLocationUpdates(request, callback, null)
@@ -66,10 +71,29 @@ class LocationRepository @Inject constructor(
             .build()
         val callback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
-                result.lastLocation?.let { trySend(it) }
+                // Only forward fresh fixes: a stale cached location can otherwise make
+                // navigation think you've arrived when you haven't.
+                result.lastLocation?.let { if (isFresh(it)) trySend(it) }
             }
         }
         fused.requestLocationUpdates(request, callback, null)
         awaitClose { fused.removeLocationUpdates(callback) }
+    }
+
+    companion object {
+        /** True if the fix was produced within [maxAgeMs] (default 10 s), not a cached one. */
+        fun isFresh(loc: Location, maxAgeMs: Long = 10_000): Boolean {
+            val elapsed = loc.elapsedRealtimeNanos
+            if (elapsed <= 0L) return true // provider didn't stamp it — don't wrongly drop it
+            val ageNanos = SystemClock.elapsedRealtimeNanos() - elapsed
+            return ageNanos in 0..(maxAgeMs * 1_000_000)
+        }
+
+        /** Prefer geoid-corrected mean-sea-level altitude (Android 14+); else ellipsoidal. */
+        fun mslOrEllipsoidAltitude(loc: Location): Double? = when {
+            Build.VERSION.SDK_INT >= 34 && loc.hasMslAltitude() -> loc.mslAltitudeMeters
+            loc.hasAltitude() -> loc.altitude
+            else -> null
+        }
     }
 }
