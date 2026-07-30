@@ -2,7 +2,6 @@ package com.prempoddar.loadstone.data.location
 
 import android.annotation.SuppressLint
 import android.location.Location
-import android.os.Build
 import android.os.SystemClock
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -26,6 +25,7 @@ import javax.inject.Singleton
 @Singleton
 class LocationRepository @Inject constructor(
     private val fused: FusedLocationProviderClient,
+    private val altitudeCorrector: AltitudeCorrector,
 ) {
     @SuppressLint("MissingPermission")
     fun averagedFixes(): Flow<PinFix> = callbackFlow {
@@ -39,7 +39,7 @@ class LocationRepository @Inject constructor(
                     longitude = loc.longitude,
                     accuracyMeters = loc.accuracy,
                     timestampMs = loc.time,
-                    altitudeMeters = mslOrEllipsoidAltitude(loc),
+                    altitudeMeters = altitudeCorrector.mslAltitudeMeters(loc),
                 ),
             )
             averaging.current()?.let { trySend(it) }
@@ -87,13 +87,6 @@ class LocationRepository @Inject constructor(
             if (elapsed <= 0L) return true // provider didn't stamp it — don't wrongly drop it
             val ageNanos = SystemClock.elapsedRealtimeNanos() - elapsed
             return ageNanos in 0..(maxAgeMs * 1_000_000)
-        }
-
-        /** Prefer geoid-corrected mean-sea-level altitude (Android 14+); else ellipsoidal. */
-        fun mslOrEllipsoidAltitude(loc: Location): Double? = when {
-            Build.VERSION.SDK_INT >= 34 && loc.hasMslAltitude() -> loc.mslAltitudeMeters
-            loc.hasAltitude() -> loc.altitude
-            else -> null
         }
     }
 }
