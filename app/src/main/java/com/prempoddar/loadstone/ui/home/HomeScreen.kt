@@ -22,7 +22,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.filled.Settings
@@ -222,14 +221,6 @@ private fun PinRow(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-            }
-            if (pin.photoPaths.isNotEmpty()) {
-                Icon(
-                    Icons.Filled.PhotoLibrary,
-                    contentDescription = "Has photos",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp).padding(end = 6.dp),
-                )
             }
             if (distanceMeters != null) {
                 Text(
