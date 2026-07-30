@@ -33,7 +33,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Verified App Links: shared Loadstone links open the app directly. -->
+            <!-- Shared https links. autoVerify stays on so these open the app directly if
+                 /.well-known/assetlinks.json is ever served from the domain root; from a project
+                 Pages site it cannot be, so the link opens the web page instead. -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -41,7 +43,16 @@
                 <data
                     android:scheme="https"
                     android:host="prempoddar.github.io"
-                    android:pathPrefix="/loadstone/open" />
+                    android:pathPrefix="/Loadstone/open" />
+            </intent-filter>
+
+            <!-- Custom scheme: needs no domain verification, so the web page's
+                 "Open in Loadstone" button always reaches the app when it is installed. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="loadstone" />
             </intent-filter>
         </activity>
 
