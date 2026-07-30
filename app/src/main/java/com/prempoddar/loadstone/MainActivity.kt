@@ -52,8 +52,11 @@ class MainActivity : ComponentActivity() {
                 CompositionLocalProvider(
                     LocalUnitSystem provides (current?.unitSystem ?: UnitSystem.METRIC),
                 ) {
+                    // Remembered outside the settings gate so the back stack survives activity
+                    // recreation (e.g. returning from the camera); otherwise a fresh controller
+                    // would be built after settings load and drop the saved destination.
+                    val navController = rememberNavController()
                     if (current != null) {
-                        val navController = rememberNavController()
                         val start = if (current.onboardingComplete) Routes.HOME else Routes.ONBOARDING
                         LoadstoneNavHost(navController = navController, startDestination = start)
 
