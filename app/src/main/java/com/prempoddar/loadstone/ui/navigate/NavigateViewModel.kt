@@ -111,6 +111,13 @@ class NavigateViewModel @Inject constructor(
         viewModelScope.launch { settings.setArcHintDismissed(true) }
     }
 
+    fun addPhoto(path: String) {
+        val current = pin.value ?: return
+        val updated = current.copy(photoPaths = current.photoPaths + path)
+        pin.value = updated
+        viewModelScope.launch { pinRepository.upsert(updated) }
+    }
+
     companion object {
         /** Above this current-fix uncertainty we won't claim "arrived". */
         const val ARRIVE_MAX_ACCURACY = 20f

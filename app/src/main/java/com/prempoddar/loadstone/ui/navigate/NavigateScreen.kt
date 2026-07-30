@@ -1,5 +1,7 @@
 package com.prempoddar.loadstone.ui.navigate
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -40,11 +43,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.prempoddar.loadstone.core.format.UnitFormatter
+import com.prempoddar.loadstone.data.photo.PhotoStore
 import com.prempoddar.loadstone.ui.LocalUnitSystem
 import com.prempoddar.loadstone.ui.components.CategoryBadge
 import com.prempoddar.loadstone.ui.components.CompassArrow
+import com.prempoddar.loadstone.ui.components.PhotoRow
+import com.prempoddar.loadstone.ui.components.PhotoViewerDialog
 import com.prempoddar.loadstone.ui.permission.rememberLocationPermissionState
 import com.prempoddar.loadstone.ui.util.Haptics
+import java.io.File
 
 @Composable
 fun NavigateScreen(
@@ -56,8 +63,24 @@ fun NavigateScreen(
     val permission = rememberLocationPermissionState()
     val unit = LocalUnitSystem.current
     val view = LocalView.current
+    val context = LocalContext.current
 
     var wasArrived by remember { mutableStateOf(false) }
+    var viewerPath by remember { mutableStateOf<String?>(null) }
+    var pendingFile by remember { mutableStateOf<File?>(null) }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture(),
+    ) { success ->
+        val file = pendingFile
+        if (success && file != null) {
+            Haptics.confirm(view)
+            viewModel.addPhoto(file.absolutePath)
+        } else if (file != null) {
+            PhotoStore.delete(file.absolutePath)
+        }
+        pendingFile = null
+    }
 
     LaunchedEffect(permission.hasPermission) {
         if (permission.hasPermission) viewModel.start()
@@ -171,7 +194,24 @@ fun NavigateScreen(
                 }
             }
 
-            Spacer(Modifier.height(28.dp))
+            // Photos of this place — tap to view full screen, or add another.
+            if (pin != null) {
+                Spacer(Modifier.height(20.dp))
+                PhotoRow(
+                    paths = pin.photoPaths,
+                    modifier = Modifier.fillMaxWidth(),
+                    thumbSize = 72.dp,
+                    onAdd = {
+                        Haptics.tap(view)
+                        val file = PhotoStore.newPhotoFile(context)
+                        pendingFile = file
+                        cameraLauncher.launch(PhotoStore.uriFor(context, file))
+                    },
+                    onOpen = { path -> Haptics.tap(view); viewerPath = path },
+                )
+            }
+
+            Spacer(Modifier.height(20.dp))
 
             // Close.
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -193,6 +233,10 @@ fun NavigateScreen(
             }
             Spacer(Modifier.height(8.dp))
         }
+    }
+
+    viewerPath?.let { path ->
+        PhotoViewerDialog(path = path, onDismiss = { viewerPath = null })
     }
 }
 
