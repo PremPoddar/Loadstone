@@ -21,6 +21,7 @@ import kotlin.math.sqrt
 class LocationAveraging(
     private val windowMs: Long = 45_000,
     private val maxSamples: Int = 120,
+    private val maxAccuracyMeters: Float = MAX_USABLE_ACCURACY,
 ) {
     private val samples = ArrayDeque<RawFix>()
     private var consecutiveFar = 0
@@ -30,9 +31,14 @@ class LocationAveraging(
         consecutiveFar = 0
     }
 
-    /** Ingest a fix. Only physically impossible fixes (non-positive accuracy) are dropped. */
+    /**
+     * Ingest a fix. Readings too coarse to ever locate a spot precisely (Wi-Fi and cell-tower
+     * derived fixes, typically hundreds of meters) are dropped outright: their inverse-variance
+     * weight is small but non-zero, and letting one in as the *first* sample would also seed the
+     * movement guard from the wrong place.
+     */
     fun add(fix: RawFix) {
-        if (fix.accuracyMeters <= 0f) return
+        if (fix.accuracyMeters <= 0f || fix.accuracyMeters > maxAccuracyMeters) return
         val cur = current()
         if (cur != null) {
             val d = GeoMath.distanceMeters(cur.latitude, cur.longitude, fix.latitude, fix.longitude)
@@ -49,6 +55,42 @@ class LocationAveraging(
         samples.addLast(fix)
         evictOld(fix.timestampMs)
         while (samples.size > maxSamples) samples.removeFirst()
+        trimToSettled()
+    }
+
+    /**
+     * Drop the approach.
+     *
+     * Walking up to a spot with the screen open used to blend the whole path into the average: the
+     * movement guard never fires because each step is small next to the running mean, so the pin
+     * landed tens of meters back along the way you came. Standing still produces *scatter* — the
+     * older and newer halves of the window sit on top of each other — whereas walking produces
+     * *drift*, with the halves clearly separated. While that separation is larger than the noise,
+     * the older half belongs to the approach, so discard it.
+     */
+    private fun trimToSettled() {
+        while (samples.size >= MIN_SPLIT_SAMPLES) {
+            val half = samples.size / 2
+            val older = centroidOf(samples.take(half))
+            val newer = centroidOf(samples.drop(half))
+            val drift = GeoMath.distanceMeters(older.first, older.second, newer.first, newer.second)
+            val noise = maxOf(samples.drop(half).minOf { it.accuracyMeters }.toDouble(), 4.0)
+            if (drift <= noise) return
+            repeat(half) { samples.removeFirst() }
+        }
+    }
+
+    private fun centroidOf(list: List<RawFix>): Pair<Double, Double> {
+        var wSum = 0.0
+        var lat = 0.0
+        var lon = 0.0
+        for (s in list) {
+            val w = 1.0 / (s.accuracyMeters.toDouble() * s.accuracyMeters)
+            wSum += w
+            lat += w * s.latitude
+            lon += w * s.longitude
+        }
+        return (lat / wSum) to (lon / wSum)
     }
 
     private fun evictOld(nowMs: Long) {
@@ -96,5 +138,14 @@ class LocationAveraging(
     companion object {
         /** Consecutive far readings required before we accept that the user has moved. */
         const val MOVE_CONFIRM = 4
+
+        /**
+         * Worst fix that can still contribute to a pin. Real GNSS outdoors is 3–15 m; anything
+         * beyond this is a network-derived guess that would only poison the average.
+         */
+        const val MAX_USABLE_ACCURACY = 100f
+
+        /** Fewest samples worth splitting in half to tell drift (walking) from scatter (standing). */
+        const val MIN_SPLIT_SAMPLES = 6
     }
 }
