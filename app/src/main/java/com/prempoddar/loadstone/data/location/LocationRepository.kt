@@ -71,9 +71,10 @@ class LocationRepository @Inject constructor(
             .build()
         val callback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
-                // Only forward fresh fixes: a stale cached location can otherwise make
-                // navigation think you've arrived when you haven't.
-                result.lastLocation?.let { if (isFresh(it)) trySend(it) }
+                // Forward only fresh AND reasonably precise fixes. A stale cached location made
+                // navigation think you'd arrived when you hadn't; a coarse network fix made it
+                // report a confident but wrong distance.
+                result.lastLocation?.let { if (isFresh(it) && isPrecise(it)) trySend(it) }
             }
         }
         fused.requestLocationUpdates(request, callback, null)
@@ -88,5 +89,14 @@ class LocationRepository @Inject constructor(
             val ageNanos = SystemClock.elapsedRealtimeNanos() - elapsed
             return ageNanos in 0..(maxAgeMs * 1_000_000)
         }
+
+        /**
+         * True if the fix is precise enough to be worth acting on. Fixes without an accuracy
+         * figure, or coarser than [LocationAveraging.MAX_USABLE_ACCURACY], are network-derived
+         * guesses that would produce confidently wrong distances.
+         */
+        fun isPrecise(loc: Location): Boolean =
+            loc.hasAccuracy() && loc.accuracy > 0f &&
+                loc.accuracy <= LocationAveraging.MAX_USABLE_ACCURACY
     }
 }

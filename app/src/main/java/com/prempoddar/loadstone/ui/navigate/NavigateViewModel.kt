@@ -35,6 +35,8 @@ data class NavigateUiState(
     val currentAccuracyMeters: Float? = null,
     val compassAccuracyClass: Int = 3,
     val arrived: Boolean = false,
+    /** True while the only fixes available are too coarse to give a real distance or bearing. */
+    val waitingForFix: Boolean = false,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -78,16 +80,26 @@ class NavigateViewModel @Inject constructor(
                 )
                 val currentAccuracy = if (loc.hasAccuracy()) loc.accuracy else null
                 val arrivedRadius = max(p.accuracyMeters.toDouble(), 6.0)
-                // Only declare arrival on a trustworthy fix — a coarse/uncertain fix must
-                // not claim you're there (this caused "arrived" when 50 m away).
+
+                // A Wi-Fi or cell fix can be hundreds of meters out. Showing a distance derived
+                // from one reads as authoritative and is simply wrong — it is why standing on the
+                // spot could report "75 m away". Withhold distance and bearing until the fix is
+                // good enough to mean something.
+                val usable = currentAccuracy != null && currentAccuracy <= NAV_MAX_ACCURACY
                 val trustworthy = currentAccuracy != null && currentAccuracy <= ARRIVE_MAX_ACCURACY
+
                 NavigateUiState(
                     pin = p,
-                    arrowAngle = GeoMath.arrowAngleDegrees(bearing, head.trueNorthDegrees.toDouble()).toFloat(),
-                    distanceMeters = distance,
+                    arrowAngle = if (usable) {
+                        GeoMath.arrowAngleDegrees(bearing, head.trueNorthDegrees.toDouble()).toFloat()
+                    } else {
+                        0f
+                    },
+                    distanceMeters = if (usable) distance else null,
                     currentAccuracyMeters = currentAccuracy,
                     compassAccuracyClass = head.accuracyClass,
                     arrived = trustworthy && distance <= arrivedRadius,
+                    waitingForFix = !usable,
                 )
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), NavigateUiState())
@@ -121,5 +133,8 @@ class NavigateViewModel @Inject constructor(
     companion object {
         /** Above this current-fix uncertainty we won't claim "arrived". */
         const val ARRIVE_MAX_ACCURACY = 20f
+
+        /** Above this, a fix is too coarse to derive a meaningful distance or bearing from. */
+        const val NAV_MAX_ACCURACY = 50f
     }
 }

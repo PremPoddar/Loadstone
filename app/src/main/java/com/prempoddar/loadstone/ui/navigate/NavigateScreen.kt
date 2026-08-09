@@ -158,6 +158,19 @@ fun NavigateScreen(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
                     )
+                } else if (state.waitingForFix) {
+                    Text(
+                        "Getting a fix",
+                        fontSize = 34.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        "step outside for a clear view of the sky",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.outline,
+                        textAlign = TextAlign.Center,
+                    )
                 } else {
                     val parts = state.distanceMeters?.let { UnitFormatter.distanceParts(it, unit) }
                     Row(verticalAlignment = Alignment.Bottom) {
