@@ -20,7 +20,14 @@ data class DropUiState(
     val stabilized: Boolean = false,
     val saving: Boolean = false,
 ) {
-    val canSave: Boolean get() = fix != null && !saving
+    /**
+     * A pin is only worth saving once the estimate is tight enough to walk back to. Saving a
+     * loose fix bakes that error in permanently — the pin is then wrong every time you return.
+     */
+    val accurateEnough: Boolean
+        get() = fix != null && fix.estAccuracyMeters <= DropPinViewModel.SAVE_MAX_ACCURACY
+
+    val canSave: Boolean get() = accurateEnough && !saving
 }
 
 @HiltViewModel
@@ -77,5 +84,11 @@ class DropPinViewModel @Inject constructor(
     companion object {
         const val GOOD_ENOUGH_METERS = 5f
         const val MIN_SAMPLES = 8
+
+        /**
+         * Refuse to save beyond this. A pin saved at ±40 m sends you to the wrong place forever;
+         * outdoors this threshold is reached within seconds, so it only blocks genuinely bad fixes.
+         */
+        const val SAVE_MAX_ACCURACY = 20f
     }
 }

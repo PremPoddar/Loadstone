@@ -116,7 +116,8 @@ fun DropPinScreen(
                     text = when {
                         state.fix == null -> "Finding your position…"
                         state.stabilized -> "Great accuracy — ready to save"
-                        else -> "Hold still — getting more precise…"
+                        !state.accurateEnough -> "Too rough to save yet — hold still…"
+                        else -> "Good enough to save — hold still for sharper"
                     },
                     style = MaterialTheme.typography.titleMedium,
                     color = statusColor,
@@ -165,7 +166,7 @@ fun DropPinScreen(
             ) {
                 Icon(Icons.Filled.LocationOn, contentDescription = null)
                 Spacer(Modifier.height(0.dp))
-                Text("  Save pin here")
+                Text(if (state.canSave) "  Save pin here" else "  Waiting for a better fix")
             }
         }
     }
