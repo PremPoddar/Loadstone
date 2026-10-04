@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PinDao {
-    @Query("SELECT * FROM pins ORDER BY createdAt DESC")
+    @Query("SELECT * FROM pins ORDER BY isPinned DESC, createdAt DESC")
     fun observeAll(): Flow<List<PinEntity>>
 
     @Query("SELECT * FROM pins WHERE id = :id")
@@ -18,4 +18,7 @@ interface PinDao {
 
     @Query("DELETE FROM pins WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    @Query("UPDATE pins SET isPinned = :pinned WHERE id = :id")
+    suspend fun setPinned(id: Long, pinned: Boolean)
 }

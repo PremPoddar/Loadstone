@@ -5,7 +5,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [PinEntity::class], version = 2, exportSchema = false)
+@Database(entities = [PinEntity::class], version = 3, exportSchema = false)
 abstract class LoadstoneDatabase : RoomDatabase() {
     abstract fun pinDao(): PinDao
 
@@ -15,6 +15,13 @@ abstract class LoadstoneDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE pins ADD COLUMN elevationMeters REAL")
                 db.execSQL("ALTER TABLE pins ADD COLUMN photoPaths TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
+        /** v2 → v3: existing pins start unpinned. */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE pins ADD COLUMN isPinned INTEGER NOT NULL DEFAULT 0")
             }
         }
     }

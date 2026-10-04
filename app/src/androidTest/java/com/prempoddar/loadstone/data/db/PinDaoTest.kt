@@ -31,6 +31,21 @@ class PinDaoTest {
         assertThat(id).isGreaterThan(0L)
     }
 
+    @Test fun pinnedPinsComeFirstHoweverOldTheyAre() = runBlocking {
+        val old = dao.upsert(PinEntity(0, "Old", null, 1.0, 2.0, 3f, "PIN", 1L))
+        dao.upsert(PinEntity(0, "New", null, 1.0, 2.0, 3f, "PIN", 9_000L))
+        dao.setPinned(old, true)
+        assertThat(dao.observeAll().first().map { it.name }).containsExactly("Old", "New").inOrder()
+    }
+
+    @Test fun unpinningPutsItBackInOrder() = runBlocking {
+        val old = dao.upsert(PinEntity(0, "Old", null, 1.0, 2.0, 3f, "PIN", 1L))
+        dao.upsert(PinEntity(0, "New", null, 1.0, 2.0, 3f, "PIN", 9_000L))
+        dao.setPinned(old, true)
+        dao.setPinned(old, false)
+        assertThat(dao.observeAll().first().map { it.name }).containsExactly("New", "Old").inOrder()
+    }
+
     @Test fun deleteRemoves() = runBlocking {
         val id = dao.upsert(PinEntity(0, "X", null, 1.0, 2.0, 3f, "PIN", 1L))
         dao.deleteById(id)

@@ -39,7 +39,12 @@ class HomeViewModel @Inject constructor(
                     }
                     PinListItem(pin, d)
                 }
-                .sortedWith(compareBy(nullsLast()) { it.distanceMeters })
+                // Pinned first, then nearest. A pin you pinned is one you expect to find at the
+                // top whether you are standing next to it or in another country.
+                .sortedWith(
+                    compareByDescending<PinListItem> { it.pin.isPinned }
+                        .thenBy(nullsLast()) { it.distanceMeters },
+                )
             HomeUiState(items = items, hasLocation = loc != null)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HomeUiState())
 
@@ -75,6 +80,10 @@ class HomeViewModel @Inject constructor(
                 ),
             )
         }
+    }
+
+    fun setPinned(id: Long, pinned: Boolean) {
+        viewModelScope.launch { pinRepository.setPinned(id, pinned) }
     }
 
     fun delete(id: Long) {

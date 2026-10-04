@@ -17,4 +17,6 @@ class PinRepository @Inject constructor(private val dao: PinDao) {
     suspend fun upsert(pin: Pin): Long = dao.upsert(pin.toEntity())
 
     suspend fun delete(id: Long) = dao.deleteById(id)
+
+    suspend fun setPinned(id: Long, pinned: Boolean) = dao.setPinned(id, pinned)
 }

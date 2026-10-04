@@ -3,6 +3,7 @@ package com.prempoddar.loadstone.ui.home
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.Explore
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Spellcheck
 import androidx.compose.material3.AlertDialog
@@ -38,6 +40,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -52,6 +57,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.prempoddar.loadstone.core.format.CoordinateFormat
@@ -117,6 +125,13 @@ fun HomeScreen(
                 contentPadding = PaddingValues(vertical = 8.dp, horizontal = 12.dp),
             ) {
                 items(state.items, key = { it.pin.id }) { item ->
+                    SwipeablePinRow(
+                        pin = item.pin,
+                        onSetPinned = { pinned ->
+                            Haptics.confirm(view)
+                            viewModel.setPinned(item.pin.id, pinned)
+                        },
+                    ) {
                     PinRow(
                         pin = item.pin,
                         distanceMeters = item.distanceMeters,
@@ -127,6 +142,7 @@ fun HomeScreen(
                         onDelete = { pendingDelete = item.pin },
                         onOpenPhotos = { Haptics.tap(view); viewingPhotosOf = item.pin },
                     )
+                    }
                 }
             }
         }
@@ -214,6 +230,71 @@ private fun sharePin(context: android.content.Context, pin: Pin) {
     runCatching { context.startActivity(android.content.Intent.createChooser(intent, "Share pin")) }
 }
 
+/**
+ * Pin and unpin by swiping the card.
+ *
+ * Swiping right pins, swiping left unpins, and the card always springs back: there is nothing to
+ * dismiss here, so [SwipeToDismissBox] is used purely for its gesture and the settle is refused
+ * rather than confirmed. The background says which of the two is about to happen, because a swipe
+ * with no label on it is a guess.
+ */
+@Composable
+private fun SwipeablePinRow(
+    pin: Pin,
+    onSetPinned: (Boolean) -> Unit,
+    content: @Composable () -> Unit,
+) {
+    val state = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            when (value) {
+                SwipeToDismissBoxValue.StartToEnd -> onSetPinned(true)
+                SwipeToDismissBoxValue.EndToStart -> onSetPinned(false)
+                SwipeToDismissBoxValue.Settled -> Unit
+            }
+            false
+        },
+    )
+    SwipeToDismissBox(
+        state = state,
+        backgroundContent = {
+            when (state.dismissDirection) {
+                SwipeToDismissBoxValue.StartToEnd ->
+                    SwipeAction(Alignment.CenterStart, Icons.Filled.PushPin, "Pin to top", MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer)
+                SwipeToDismissBoxValue.EndToStart ->
+                    SwipeAction(Alignment.CenterEnd, Icons.Filled.PushPin, "Unpin", MaterialTheme.colorScheme.surfaceContainerHighest, MaterialTheme.colorScheme.onSurfaceVariant)
+                SwipeToDismissBoxValue.Settled -> Unit
+            }
+        },
+        content = { content() },
+    )
+}
+
+@Composable
+private fun SwipeAction(
+    alignment: Alignment,
+    icon: ImageVector,
+    label: String,
+    background: Color,
+    foreground: Color,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight()
+            .padding(vertical = 6.dp)
+            .clip(MaterialTheme.shapes.large)
+            .background(background)
+            .padding(horizontal = 24.dp),
+        contentAlignment = alignment,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, contentDescription = null, tint = foreground)
+            Spacer(Modifier.size(10.dp))
+            Text(label, style = MaterialTheme.typography.labelLarge, color = foreground)
+        }
+    }
+}
+
 @Composable
 private fun PinRow(
     pin: Pin,
@@ -242,12 +323,23 @@ private fun PinRow(
             PinAvatar(pin = pin, onOpenPhotos = onOpenPhotos)
             Spacer(Modifier.size(14.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    pin.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (pin.isPinned) {
+                        Icon(
+                            Icons.Filled.PushPin,
+                            contentDescription = "Pinned",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(14.dp),
+                        )
+                        Spacer(Modifier.size(5.dp))
+                    }
+                    Text(
+                        pin.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 val subtitle = pin.note?.takeIf { it.isNotBlank() }
                 if (subtitle != null) {
                     Text(

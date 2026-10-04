@@ -11,5 +11,7 @@ data class Pin(
     val category: PinCategory = PinCategory.PIN,
     val elevationMeters: Double? = null,
     val photoPaths: List<String> = emptyList(),
+    /** Kept at the top of the list regardless of how far away it is. */
+    val isPinned: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
 )
