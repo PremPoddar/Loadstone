@@ -47,6 +47,7 @@ import com.prempoddar.loadstone.core.format.UnitFormatter
 import com.prempoddar.loadstone.data.photo.PhotoStore
 import com.prempoddar.loadstone.ui.LocalUnitSystem
 import com.prempoddar.loadstone.ui.components.CategoryBadge
+import com.prempoddar.loadstone.ui.components.icon
 import com.prempoddar.loadstone.ui.components.CompassArrow
 import com.prempoddar.loadstone.ui.components.PhotoRow
 import com.prempoddar.loadstone.ui.components.PhotoViewerDialog
@@ -67,7 +68,7 @@ fun NavigateScreen(
     val context = LocalContext.current
 
     var wasArrived by remember { mutableStateOf(false) }
-    var viewerPath by remember { mutableStateOf<String?>(null) }
+    var viewerIndex by remember { mutableStateOf<Int?>(null) }
     var pendingFile by remember { mutableStateOf<File?>(null) }
 
     val cameraLauncher = rememberLauncherForActivityResult(
@@ -132,7 +133,7 @@ fun NavigateScreen(
             )
             if (pin != null) {
                 Spacer(Modifier.height(16.dp))
-                CategoryBadge(pin.category, size = 56)
+                CategoryBadge(pin.category, size = 56, icon = pin.icon())
             }
 
             // Arrow.
@@ -256,7 +257,7 @@ fun NavigateScreen(
                         pendingFile = file
                         cameraLauncher.launch(PhotoStore.uriFor(context, file))
                     },
-                    onOpen = { path -> Haptics.tap(view); viewerPath = path },
+                    onOpen = { path -> Haptics.tap(view); viewerIndex = pin.photoPaths.indexOf(path) },
                 )
             }
 
@@ -284,8 +285,12 @@ fun NavigateScreen(
         }
     }
 
-    viewerPath?.let { path ->
-        PhotoViewerDialog(path = path, onDismiss = { viewerPath = null })
+    viewerIndex?.let { index ->
+        PhotoViewerDialog(
+            paths = state.pin?.photoPaths.orEmpty(),
+            startIndex = index,
+            onDismiss = { viewerIndex = null },
+        )
     }
 }
 

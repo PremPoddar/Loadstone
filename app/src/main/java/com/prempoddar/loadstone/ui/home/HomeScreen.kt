@@ -57,7 +57,8 @@ import com.prempoddar.loadstone.core.format.UnitFormatter
 import com.prempoddar.loadstone.data.pin.Pin
 import com.prempoddar.loadstone.share.AppLinks
 import com.prempoddar.loadstone.ui.LocalUnitSystem
-import com.prempoddar.loadstone.ui.components.CategoryBadge
+import com.prempoddar.loadstone.ui.components.PhotoViewerDialog
+import com.prempoddar.loadstone.ui.components.PinAvatar
 import com.prempoddar.loadstone.ui.drop.SavePinSheet
 import com.prempoddar.loadstone.ui.permission.rememberLocationPermissionState
 import com.prempoddar.loadstone.ui.util.Haptics
@@ -79,6 +80,7 @@ fun HomeScreen(
     }
     var pendingDelete by remember { mutableStateOf<Pin?>(null) }
     var editing by remember { mutableStateOf<Pin?>(null) }
+    var viewingPhotosOf by remember { mutableStateOf<Pin?>(null) }
 
     Scaffold(
         topBar = {
@@ -117,6 +119,7 @@ fun HomeScreen(
                         onShare = { Haptics.tap(view); sharePin(context, item.pin) },
                         onEdit = { Haptics.tap(view); editing = item.pin },
                         onDelete = { pendingDelete = item.pin },
+                        onOpenPhotos = { Haptics.tap(view); viewingPhotosOf = item.pin },
                     )
                 }
             }
@@ -136,6 +139,13 @@ fun HomeScreen(
             dismissButton = {
                 TextButton(onClick = { pendingDelete = null }) { Text("Cancel") }
             },
+        )
+    }
+
+    viewingPhotosOf?.let { pin ->
+        PhotoViewerDialog(
+            paths = pin.photoPaths,
+            onDismiss = { viewingPhotosOf = null },
         )
     }
 
@@ -187,6 +197,7 @@ private fun PinRow(
     onShare: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    onOpenPhotos: () -> Unit,
 ) {
     val unit = LocalUnitSystem.current
     var menuOpen by remember { mutableStateOf(false) }
@@ -202,7 +213,7 @@ private fun PinRow(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            CategoryBadge(pin.category)
+            PinAvatar(pin = pin, onOpenPhotos = onOpenPhotos)
             Spacer(Modifier.size(14.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
