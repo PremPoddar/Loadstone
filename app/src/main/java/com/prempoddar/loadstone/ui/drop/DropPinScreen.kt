@@ -58,7 +58,6 @@ fun DropPinScreen(
     val permission = rememberLocationPermissionState()
     val haptics = LocalHapticFeedback.current
     val view = LocalView.current
-    var showSheet by remember { mutableStateOf(false) }
     var wasStable by remember { mutableStateOf(false) }
 
     LaunchedEffect(permission.hasPermission) {
@@ -158,7 +157,7 @@ fun DropPinScreen(
             }
 
             Button(
-                onClick = { com.prempoddar.loadstone.ui.util.Haptics.tap(view); showSheet = true },
+                onClick = { com.prempoddar.loadstone.ui.util.Haptics.tap(view); viewModel.lockSpot() },
                 enabled = state.canSave,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -171,11 +170,13 @@ fun DropPinScreen(
         }
     }
 
-    if (showSheet) {
+    // Open while a spot is locked in. That lives in the view model, so a configuration change
+    // (the camera often rotates the screen) brings the sheet back on the same spot rather than
+    // closing it and making the user lock in again from wherever they took the photo.
+    if (state.lockedFix != null && !state.saving) {
         SavePinSheet(
-            onDismiss = { showSheet = false },
+            onDismiss = { viewModel.unlockSpot() },
             onSave = { name, note, category, photoPaths ->
-                showSheet = false
                 viewModel.savePin(name, note, category, photoPaths, onSaved)
             },
         )

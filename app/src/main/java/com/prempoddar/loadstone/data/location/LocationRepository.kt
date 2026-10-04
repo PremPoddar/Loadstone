@@ -4,12 +4,13 @@ import android.annotation.SuppressLint
 import android.location.Location
 import android.os.SystemClock
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.Granularity
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.Priority
-import com.prempoddar.loadstone.core.geo.LocationAveraging
 import com.prempoddar.loadstone.core.geo.PinFix
+import com.prempoddar.loadstone.core.geo.PositionEstimator
 import com.prempoddar.loadstone.core.geo.RawFix
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -18,9 +19,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Streams location from the fused provider. [averagedFixes] runs the accuracy
- * engine live so the drop-pin UI can watch the estimate tighten. Callers must
- * hold ACCESS_FINE_LOCATION before collecting.
+ * Streams location from the fused provider. [estimatedFixes] runs the accuracy engine live so the
+ * drop-pin UI can watch the estimate tighten. Callers must hold ACCESS_FINE_LOCATION before
+ * collecting.
  */
 @Singleton
 class LocationRepository @Inject constructor(
@@ -28,47 +29,32 @@ class LocationRepository @Inject constructor(
     private val altitudeCorrector: AltitudeCorrector,
 ) {
     @SuppressLint("MissingPermission")
-    fun averagedFixes(): Flow<PinFix> = callbackFlow {
-        val averaging = LocationAveraging()
+    fun estimatedFixes(): Flow<PinFix> = callbackFlow {
+        val estimator = PositionEstimator()
 
         fun ingest(loc: Location) {
             if (!loc.hasAccuracy()) return
-            averaging.add(
-                RawFix(
-                    latitude = loc.latitude,
-                    longitude = loc.longitude,
-                    accuracyMeters = loc.accuracy,
-                    timestampMs = loc.time,
-                    altitudeMeters = altitudeCorrector.mslAltitudeMeters(loc),
-                ),
-            )
-            averaging.current()?.let { trySend(it) }
+            estimator.add(loc.toRawFix(altitudeCorrector.mslAltitudeMeters(loc)))
+            estimator.current()?.let { trySend(it) }
         }
 
-        // Warm start — but only from a genuinely recent fix, never a days-old cached
-        // one (that used to poison the average and cause false readings).
+        // Warm start — but only from a genuinely recent fix, never a days-old cached one, which
+        // would anchor the estimate wherever the phone was last switched on.
         fused.lastLocation.addOnSuccessListener { loc ->
             if (loc != null && isFresh(loc, maxAgeMs = 30_000)) ingest(loc)
         }
 
-        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000L)
-            .setMinUpdateIntervalMillis(500L)
-            .setWaitForAccurateLocation(false)
-            .build()
         val callback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 result.locations.forEach { if (isFresh(it)) ingest(it) }
             }
         }
-        fused.requestLocationUpdates(request, callback, null)
+        fused.requestLocationUpdates(preciseRequest(), callback, null)
         awaitClose { fused.removeLocationUpdates(callback) }
     }
 
     @SuppressLint("MissingPermission")
     fun locationUpdates(): Flow<Location> = callbackFlow {
-        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000L)
-            .setMinUpdateIntervalMillis(500L)
-            .build()
         val callback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 // Forward only fresh AND reasonably precise fixes. A stale cached location made
@@ -77,11 +63,23 @@ class LocationRepository @Inject constructor(
                 result.lastLocation?.let { if (isFresh(it) && isPrecise(it)) trySend(it) }
             }
         }
-        fused.requestLocationUpdates(request, callback, null)
+        fused.requestLocationUpdates(preciseRequest(), callback, null)
         awaitClose { fused.removeLocationUpdates(callback) }
     }
 
     companion object {
+        /**
+         * One update per second from the satellites themselves. [Granularity.GRANULARITY_FINE] is
+         * explicit rather than inherited from the permission, so a build that also asks for coarse
+         * location can never silently downgrade the stream to fuzzed, block-level positions.
+         */
+        private fun preciseRequest(): LocationRequest =
+            LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000L)
+                .setMinUpdateIntervalMillis(500L)
+                .setGranularity(Granularity.GRANULARITY_FINE)
+                .setWaitForAccurateLocation(false)
+                .build()
+
         /** True if the fix was produced within [maxAgeMs] (default 10 s), not a cached one. */
         fun isFresh(loc: Location, maxAgeMs: Long = 10_000): Boolean {
             val elapsed = loc.elapsedRealtimeNanos
@@ -92,11 +90,32 @@ class LocationRepository @Inject constructor(
 
         /**
          * True if the fix is precise enough to be worth acting on. Fixes without an accuracy
-         * figure, or coarser than [LocationAveraging.MAX_USABLE_ACCURACY], are network-derived
+         * figure, or coarser than [PositionEstimator.MAX_USABLE_ACCURACY], are network-derived
          * guesses that would produce confidently wrong distances.
          */
         fun isPrecise(loc: Location): Boolean =
             loc.hasAccuracy() && loc.accuracy > 0f &&
-                loc.accuracy <= LocationAveraging.MAX_USABLE_ACCURACY
+                loc.accuracy <= PositionEstimator.MAX_USABLE_ACCURACY
     }
 }
+
+/**
+ * Convert a platform fix into the estimator's input.
+ *
+ * The timestamp is the provider's monotonic one, never [Location.getTime]: wall-clock time jumps
+ * whenever the network corrects the clock, and the filter reads the gap between fixes as "how far
+ * could the user have walked", so a jump would either freeze it or blow its uncertainty wide open.
+ */
+private fun Location.toRawFix(mslAltitude: Double?) = RawFix(
+    latitude = latitude,
+    longitude = longitude,
+    accuracyMeters = accuracy,
+    elapsedRealtimeMs = if (elapsedRealtimeNanos > 0L) {
+        elapsedRealtimeNanos / 1_000_000
+    } else {
+        SystemClock.elapsedRealtime()
+    },
+    altitudeMeters = mslAltitude,
+    altitudeAccuracyMeters = if (hasVerticalAccuracy()) verticalAccuracyMeters else null,
+    speedMps = if (hasSpeed()) speed else null,
+)

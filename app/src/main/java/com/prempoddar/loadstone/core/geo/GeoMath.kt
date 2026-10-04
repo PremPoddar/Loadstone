@@ -44,4 +44,49 @@ object GeoMath {
      */
     fun arrowAngleDegrees(bearingToTarget: Double, deviceHeading: Double): Double =
         normalize360(bearingToTarget - deviceHeading)
+
+    /**
+     * Compass heading (0–360, clockwise from the north of [r]) of the direction the user faces
+     * while looking at the screen. [r] is a world-from-device rotation matrix (row-major 3×3) as
+     * SensorManager builds it; [displayRotation] is the Surface.ROTATION_* constant.
+     *
+     * This is deliberately not the heading of the phone's top edge, which is what
+     * SensorManager.getOrientation's azimuth reports. Held up in front of you, that edge points
+     * at the sky, so its heading is the tiny horizontal shadow of a near-vertical line: a few
+     * degrees of hand wobble swung the arrow by tens of degrees. The screen's left–right edge
+     * stays level however far the phone is tipped toward you, so the direction square to it is
+     * always well defined: the top edge's heading when flat, the camera's when upright.
+     *
+     * Returns null when that edge itself points up (the phone is on its side with rotation
+     * locked), where no direction is "ahead".
+     */
+    fun facingHeadingDegrees(r: FloatArray, displayRotation: Int): Double? {
+        // East and north components of the screen's rightward edge. In landscape that is a
+        // different edge of the device.
+        val east: Float
+        val north: Float
+        when (displayRotation and 3) {
+            1 -> { east = -r[1]; north = -r[4] } // ROTATION_90: the device's -Y
+            2 -> { east = -r[0]; north = -r[3] } // ROTATION_180: -X
+            3 -> { east = r[1]; north = r[4] }   // ROTATION_270: +Y
+            else -> { east = r[0]; north = r[3] } // ROTATION_0: +X
+        }
+        if (east * east + north * north < MIN_LEVEL_SQUARED) return null
+        // Facing = up × right, whose (east, north) is (-north, east).
+        return normalize360(atan2(-north.toDouble(), east.toDouble()).toDeg())
+    }
+
+    /**
+     * The angle equivalent to [target] (mod 360) nearest to [current], so an animated rotation
+     * takes the short way round however many turns [current] has accumulated.
+     */
+    fun nearestEquivalentAngle(current: Float, target: Float): Float {
+        // Reduce first: `%` keeps the dividend's sign, so once [current] passed ~540° the old
+        // single-step form went negative and turned a 10° step into a 350° spin the wrong way.
+        val delta = ((target - current) % 360f + 540f) % 360f - 180f
+        return current + delta
+    }
+
+    /** Below this (the screen's side edge within ~6° of vertical) no heading is defined. */
+    private const val MIN_LEVEL_SQUARED = 0.01f
 }

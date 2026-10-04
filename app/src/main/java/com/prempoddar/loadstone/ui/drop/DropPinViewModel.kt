@@ -19,6 +19,12 @@ data class DropUiState(
     val fix: PinFix? = null,
     val stabilized: Boolean = false,
     val saving: Boolean = false,
+    /**
+     * The estimate frozen when the user tapped "Save pin here". The live [fix] keeps following
+     * them while they name the pin or take a photo (the engine is built to track movement), so
+     * saving from it put the pin wherever they had wandered to by the time they tapped Save.
+     */
+    val lockedFix: PinFix? = null,
 ) {
     /**
      * A pin is only worth saving once the estimate is tight enough to walk back to. Saving a
@@ -28,6 +34,24 @@ data class DropUiState(
         get() = fix != null && fix.estAccuracyMeters <= DropPinViewModel.SAVE_MAX_ACCURACY
 
     val canSave: Boolean get() = accurateEnough && !saving
+
+    /** Commit to the current estimate as the spot to save, or null if it is too loose. */
+    fun lock(): DropUiState? = if (canSave) copy(lockedFix = fix) else null
+
+    /** The pin to store, always at [lockedFix]; null if no spot has been locked in. */
+    fun pinToSave(name: String, note: String?, category: PinCategory, photoPaths: List<String>): Pin? {
+        val spot = lockedFix ?: return null
+        return Pin(
+            name = name.trim().ifBlank { "Pin" },
+            note = note?.trim()?.ifBlank { null },
+            latitude = spot.latitude,
+            longitude = spot.longitude,
+            accuracyMeters = spot.estAccuracyMeters,
+            category = category,
+            elevationMeters = spot.altitudeMeters,
+            photoPaths = photoPaths,
+        )
+    }
 }
 
 @HiltViewModel
@@ -46,13 +70,26 @@ class DropPinViewModel @Inject constructor(
         if (started) return
         started = true
         viewModelScope.launch {
-            locationRepository.averagedFixes()
+            locationRepository.estimatedFixes()
                 .catch { /* ignore; user sees the waiting state */ }
                 .collect { fix ->
-                    val stable = fix.estAccuracyMeters <= GOOD_ENOUGH_METERS && fix.sampleCount >= MIN_SAMPLES
+                    // "Stable" is the estimator's own verdict that more waiting will not help,
+                    // plus an accuracy worth having. Counting samples instead used to call a pin
+                    // ready purely because time had passed.
+                    val stable = fix.settled && fix.estAccuracyMeters <= GOOD_ENOUGH_METERS
                     _state.value = _state.value.copy(fix = fix, stabilized = stable)
                 }
         }
+    }
+
+    /** Freeze the current estimate as the spot to save, if it is accurate enough. */
+    fun lockSpot() {
+        _state.value.lock()?.let { _state.value = it }
+    }
+
+    /** The user backed out of naming the pin: let go of the frozen spot and keep measuring. */
+    fun unlockSpot() {
+        _state.value = _state.value.copy(lockedFix = null)
     }
 
     fun savePin(
@@ -62,28 +99,16 @@ class DropPinViewModel @Inject constructor(
         photoPaths: List<String>,
         onSaved: () -> Unit,
     ) {
-        val fix = _state.value.fix ?: return
+        val pin = _state.value.pinToSave(name, note, category, photoPaths) ?: return
         _state.value = _state.value.copy(saving = true)
         viewModelScope.launch {
-            pinRepository.upsert(
-                Pin(
-                    name = name.trim().ifBlank { "Pin" },
-                    note = note?.trim()?.ifBlank { null },
-                    latitude = fix.latitude,
-                    longitude = fix.longitude,
-                    accuracyMeters = fix.estAccuracyMeters,
-                    category = category,
-                    elevationMeters = fix.altitudeMeters,
-                    photoPaths = photoPaths,
-                ),
-            )
+            pinRepository.upsert(pin)
             onSaved()
         }
     }
 
     companion object {
-        const val GOOD_ENOUGH_METERS = 5f
-        const val MIN_SAMPLES = 8
+        const val GOOD_ENOUGH_METERS = 6f
 
         /**
          * Refuse to save beyond this. A pin saved at ±40 m sends you to the wrong place forever;

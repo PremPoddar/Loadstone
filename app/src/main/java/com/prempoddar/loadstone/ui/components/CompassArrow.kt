@@ -1,7 +1,6 @@
 package com.prempoddar.loadstone.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -25,28 +24,38 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.unit.dp
+import com.prempoddar.loadstone.core.geo.GeoMath
+import kotlin.math.abs
 import kotlin.math.min
 
 /**
  * Minimal follow-back pointer: a single thick, rounded arrow that points to the pin
  * (0° = dead ahead) and settles with a confident, critically-damped spring. A short
  * arc near the tip widens as GPS accuracy worsens — "where the pin might be."
+ *
+ * A null [angleDegrees] means the direction is unknown: the arrow fades where it is rather
+ * than snapping to "straight ahead", which read as an instruction to walk that way.
  */
 @Composable
 fun CompassArrow(
-    angleDegrees: Float,
+    angleDegrees: Float?,
     arrived: Boolean,
     accuracyMeters: Float?,
     modifier: Modifier = Modifier,
 ) {
-    var cumulative by remember { mutableFloatStateOf(angleDegrees) }
+    var cumulative by remember { mutableFloatStateOf(angleDegrees ?: 0f) }
     LaunchedEffect(angleDegrees) {
-        val delta = ((angleDegrees - cumulative + 540f) % 360f) - 180f
-        cumulative += delta
+        if (angleDegrees == null) return@LaunchedEffect
+        val next = GeoMath.nearestEquivalentAngle(cumulative, angleDegrees)
+        // Ignore hair's-breadth corrections. Re-targeting the spring on every one restarts it
+        // before it has settled, and a spring that never finishes is exactly what a shiver is.
+        if (abs(next - cumulative) >= MIN_RETARGET_DEGREES) cumulative = next
     }
     val animated by animateFloatAsState(
         targetValue = cumulative,
-        animationSpec = spring(dampingRatio = 1f, stiffness = Spring.StiffnessMediumLow),
+        // Critically damped so it never overshoots, and soft enough that the last couple of
+        // degrees arrive as a glide rather than a snap.
+        animationSpec = spring(dampingRatio = 1f, stiffness = 180f),
         label = "arrow",
     )
 
@@ -54,6 +63,12 @@ fun CompassArrow(
     val arrivedColor = MaterialTheme.colorScheme.primary
     val color by animateColorAsState(if (arrived) arrivedColor else restColor, tween(500), label = "arrowColor")
     val arcColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+    val directionKnown = angleDegrees != null
+    val presence by animateFloatAsState(
+        targetValue = if (directionKnown || arrived) 1f else 0.18f,
+        animationSpec = tween(400),
+        label = "arrowPresence",
+    )
 
     // Wider arc for weaker GPS: map ~3..50 m to ~16..92 degrees of sweep.
     val arcSweep by animateFloatAsState(
@@ -81,9 +96,9 @@ fun CompassArrow(
                     lineTo(c.x, tipY)
                     lineTo(c.x + headHalf, tipY + headDrop)
                 }
-                drawPath(arrow, color, style = stroke)
+                drawPath(arrow, color.copy(alpha = color.alpha * presence), style = stroke)
 
-                if (!arrived && accuracyMeters != null) {
+                if (!arrived && directionKnown && accuracyMeters != null) {
                     val arcR = r * 0.74f
                     drawArc(
                         color = arcColor,
@@ -99,3 +114,6 @@ fun CompassArrow(
         }
     }
 }
+
+/** Re-target below this and the spring is being restarted by noise rather than by a turn. */
+private const val MIN_RETARGET_DEGREES = 0.6f
