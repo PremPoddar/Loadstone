@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.prempoddar.loadstone.core.geo.GeoMath
 import com.prempoddar.loadstone.data.location.LocationRepository
 import com.prempoddar.loadstone.data.pin.Pin
+import com.prempoddar.loadstone.data.pin.PinCategory
 import com.prempoddar.loadstone.data.pin.PinRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,6 +54,29 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Save a pin someone sent as a sentence.
+     *
+     * The code itself rounds to a couple of metres, but it says nothing about how good the
+     * sender's own fix was, and a pin is only as good as the measurement behind it. Claiming
+     * better than a typical saved pin would make the arrow point with a confidence nobody has
+     * earned, so a shared pin starts at [SHARED_ACCURACY_METERS] and tightens the first time
+     * someone stands on the spot.
+     */
+    fun addFromWords(latitude: Double, longitude: Double, name: String) {
+        viewModelScope.launch {
+            pinRepository.upsert(
+                Pin(
+                    name = name,
+                    latitude = latitude,
+                    longitude = longitude,
+                    accuracyMeters = SHARED_ACCURACY_METERS,
+                    category = PinCategory.PIN,
+                ),
+            )
+        }
+    }
+
     fun delete(id: Long) {
         viewModelScope.launch { pinRepository.delete(id) }
     }
@@ -61,7 +85,7 @@ class HomeViewModel @Inject constructor(
         original: Pin,
         name: String,
         note: String?,
-        category: com.prempoddar.loadstone.data.pin.PinCategory,
+        category: PinCategory,
         photoPaths: List<String>,
     ) {
         viewModelScope.launch {
@@ -74,5 +98,10 @@ class HomeViewModel @Inject constructor(
                 ),
             )
         }
+    }
+
+    companion object {
+        /** What a pin shared as words is worth before anyone has stood on it. */
+        const val SHARED_ACCURACY_METERS = 10f
     }
 }

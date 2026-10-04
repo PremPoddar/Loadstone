@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Spellcheck
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
@@ -53,9 +54,10 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.prempoddar.loadstone.core.format.CoordinateFormat
 import com.prempoddar.loadstone.core.format.UnitFormatter
 import com.prempoddar.loadstone.data.pin.Pin
-import com.prempoddar.loadstone.share.AppLinks
+import com.prempoddar.loadstone.share.WordCode
 import com.prempoddar.loadstone.ui.LocalUnitSystem
 import com.prempoddar.loadstone.ui.components.PhotoViewerDialog
 import com.prempoddar.loadstone.ui.components.PinAvatar
@@ -81,12 +83,16 @@ fun HomeScreen(
     var pendingDelete by remember { mutableStateOf<Pin?>(null) }
     var editing by remember { mutableStateOf<Pin?>(null) }
     var viewingPhotosOf by remember { mutableStateOf<Pin?>(null) }
+    var addingFromWords by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Loadstone", style = MaterialTheme.typography.titleLarge) },
                 actions = {
+                    IconButton(onClick = { Haptics.tap(view); addingFromWords = true }) {
+                        Icon(Icons.Filled.Spellcheck, contentDescription = "Add from words")
+                    }
                     IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Filled.Settings, contentDescription = "Settings")
                     }
@@ -142,6 +148,17 @@ fun HomeScreen(
         )
     }
 
+    if (addingFromWords) {
+        AddFromWordsDialog(
+            onDismiss = { addingFromWords = false },
+            onAdd = { lat, lon, name ->
+                Haptics.confirm(view)
+                viewModel.addFromWords(lat, lon, name)
+                addingFromWords = false
+            },
+        )
+    }
+
     viewingPhotosOf?.let { pin ->
         PhotoViewerDialog(
             paths = pin.photoPaths,
@@ -173,12 +190,21 @@ private fun openInMaps(context: android.content.Context, pin: Pin) {
     runCatching { context.startActivity(intent) }
 }
 
+/**
+ * Share a pin as a sentence rather than as a link.
+ *
+ * A link is only useful if the thing receiving it can open it, and a Loadstone link lands in
+ * whatever browser the recipient happens to have. Seven words need nothing: they can be read
+ * aloud, written on a receipt, or pasted into any chat app, and typed back in by hand. The
+ * coordinates ride along on the last line for anyone who would rather use a map app.
+ */
 private fun sharePin(context: android.content.Context, pin: Pin) {
-    val link = AppLinks.shareUrl(pin.latitude, pin.longitude, pin.name, pin.note)
     val body = buildString {
         append(pin.name)
         pin.note?.takeIf { it.isNotBlank() }?.let { append('\n').append(it) }
-        append('\n').append(link)
+        append("\n\n").append(WordCode.sentenceFor(pin.latitude, pin.longitude))
+        append("\n\nOpen Loadstone and tap Add from words to drop this pin.")
+        append('\n').append(CoordinateFormat.format(pin.latitude, pin.longitude))
     }
     val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
         type = "text/plain"
@@ -251,7 +277,7 @@ private fun PinRow(
                         onClick = { menuOpen = false; onOpenMaps() },
                     )
                     DropdownMenuItem(
-                        text = { Text("Share") },
+                        text = { Text("Share as words") },
                         leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
                         onClick = { menuOpen = false; onShare() },
                     )
