@@ -116,7 +116,7 @@ fun SavePinSheet(
                         selected = category == cat,
                         onClick = { Haptics.select(view); category = cat },
                         label = { Text(v.label) },
-                        leadingIcon = { Icon(v.icon, contentDescription = null) },
+                        leadingIcon = { Icon(v.icons.first(), contentDescription = null) },
                     )
                 }
             }
