@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -146,6 +147,14 @@ fun NavigateScreen(
                 )
             }
 
+            if (!state.compassAvailable) {
+                CompassNotice("This phone has no compass, so there's no arrow — walk and watch the distance.")
+                Spacer(Modifier.height(16.dp))
+            } else if (state.compassNeedsCalibration && !state.arrived) {
+                CompassNotice("Compass needs calibrating — wave your phone in a figure 8.")
+                Spacer(Modifier.height(16.dp))
+            }
+
             // Distance.
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -192,9 +201,36 @@ fun NavigateScreen(
                         }
                     }
                     Text(
-                        "ahead",
+                        when {
+                            state.searchHere -> "close — look around you"
+                            state.arrowAngle != null -> "ahead"
+                            else -> "away"
+                        },
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+                state.uncertaintyMeters?.takeIf { state.arrived || state.searchHere }?.let { radius ->
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "the spot is within ${UnitFormatter.formatDistance(radius, unit)} of you",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+                if (state.canRefine) {
+                    Spacer(Modifier.height(4.dp))
+                    TextButton(onClick = { Haptics.confirm(view); viewModel.refineFromHere() }) {
+                        Text("I'm standing on it — sharpen this pin")
+                    }
+                } else if (state.refined) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Pin sharpened with this visit",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
                     )
                 }
                 pin?.elevationMeters?.let { elev ->
@@ -284,6 +320,33 @@ private fun ArcHintBanner(onDismiss: () -> Unit) {
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun CompassNotice(text: String) {
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                Icons.Outlined.Explore,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                modifier = Modifier.size(22.dp),
+            )
+            Spacer(Modifier.size(12.dp))
+            Text(
+                text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+            )
         }
     }
 }
