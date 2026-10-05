@@ -1,6 +1,7 @@
 package com.prempoddar.loadstone.ui.components
 
 import android.graphics.BitmapFactory
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -104,6 +105,7 @@ fun PhotoViewerDialog(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ZoomablePhoto(path: String) {
     val bitmap by produceState<ImageBitmap?>(initialValue = null, path) {
@@ -115,8 +117,6 @@ private fun ZoomablePhoto(path: String) {
     var offset by remember(path) { mutableStateOf(Offset.Zero) }
     val transform = rememberTransformableState { zoomChange, panChange, _ ->
         scale = (scale * zoomChange).coerceIn(1f, MAX_ZOOM)
-        // Panning is only meaningful once zoomed in; at rest the photo stays centered so the
-        // pager keeps the horizontal gesture and swiping between photos still works.
         offset = if (scale > 1f) offset + panChange else Offset.Zero
     }
 
@@ -135,7 +135,14 @@ private fun ZoomablePhoto(path: String) {
                         translationX = offset.x,
                         translationY = offset.y,
                     )
-                    .transformable(transform)
+                    // canPan is what makes swiping between photos work. A transformable that
+                    // accepts pans consumes every drag that reaches it, zoomed in or not, so the
+                    // pager underneath never saw the gesture and the only way to the next photo
+                    // was to close the viewer and tap it. Panning is meaningless at rest anyway —
+                    // there is nothing off screen to pan to — so at scale 1 the drag is left
+                    // alone and the pager takes it. Pinching still zooms, because that is two
+                    // fingers and not a pan.
+                    .transformable(state = transform, canPan = { scale > 1f })
                     .pointerInput(path) {
                         detectTapGestures(
                             onDoubleTap = {

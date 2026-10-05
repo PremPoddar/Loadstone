@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Abc
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -27,7 +28,6 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Spellcheck
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
@@ -62,7 +62,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.prempoddar.loadstone.core.format.CoordinateFormat
 import com.prempoddar.loadstone.core.format.UnitFormatter
 import com.prempoddar.loadstone.data.pin.Pin
 import com.prempoddar.loadstone.share.WordCode
@@ -99,7 +98,7 @@ fun HomeScreen(
                 title = { Text("Loadstone", style = MaterialTheme.typography.titleLarge) },
                 actions = {
                     IconButton(onClick = { Haptics.tap(view); addingFromWords = true }) {
-                        Icon(Icons.Filled.Spellcheck, contentDescription = "Add from words")
+                        Icon(Icons.Filled.Abc, contentDescription = "Add from words")
                     }
                     IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Filled.Settings, contentDescription = "Settings")
@@ -215,19 +214,18 @@ private fun openInMaps(context: android.content.Context, pin: Pin) {
  * coordinates ride along on the last line for anyone who would rather use a map app.
  */
 private fun sharePin(context: android.content.Context, pin: Pin) {
-    val body = buildString {
-        append(pin.name)
-        pin.note?.takeIf { it.isNotBlank() }?.let { append('\n').append(it) }
-        append("\n\n").append(WordCode.sentenceFor(pin.latitude, pin.longitude))
-        append("\n\nOpen Loadstone and tap Add from words to drop this pin.")
-        append('\n').append(CoordinateFormat.format(pin.latitude, pin.longitude))
-    }
+    // The shared text is the sentence and nothing else. Every target of the share sheet gets the
+    // same string, including its Copy button, so anything wrapped around the words — a name, an
+    // explanation of what to do with them — is something the recipient then has to delete before
+    // pasting. The sentence is self-contained by design; the pin's name travels as the subject,
+    // where mail apps use it and chat apps ignore it.
     val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
         type = "text/plain"
-        putExtra(android.content.Intent.EXTRA_TEXT, body)
+        putExtra(android.content.Intent.EXTRA_TEXT, WordCode.sentenceFor(pin.latitude, pin.longitude))
         putExtra(android.content.Intent.EXTRA_SUBJECT, pin.name)
+        putExtra(android.content.Intent.EXTRA_TITLE, pin.name)
     }
-    runCatching { context.startActivity(android.content.Intent.createChooser(intent, "Share pin")) }
+    runCatching { context.startActivity(android.content.Intent.createChooser(intent, "Share ${pin.name}")) }
 }
 
 /**
