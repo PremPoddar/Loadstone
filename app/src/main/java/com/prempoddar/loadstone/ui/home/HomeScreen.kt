@@ -18,7 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Abc
+import androidx.compose.material.icons.automirrored.filled.Input
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -98,7 +98,7 @@ fun HomeScreen(
                 title = { Text("Loadstone", style = MaterialTheme.typography.titleLarge) },
                 actions = {
                     IconButton(onClick = { Haptics.tap(view); addingFromWords = true }) {
-                        Icon(Icons.Filled.Abc, contentDescription = "Add from words")
+                        Icon(Icons.AutoMirrored.Filled.Input, contentDescription = "Add from words")
                     }
                     IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Filled.Settings, contentDescription = "Settings")

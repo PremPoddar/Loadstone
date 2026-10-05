@@ -57,7 +57,7 @@ The grammar does two jobs. It makes the result funny every time rather than now 
 any adjective in the list sits happily on any noun in the list. And it makes a word in the wrong
 position wrong by construction, before any arithmetic runs.
 
-Read one back with the **abc** button in the toolbar. It accepts the whole forwarded message, not
+Read one back with the **import** button in the toolbar. It accepts the whole forwarded message, not
 just the seven words, and tells you which word it doesn't recognise as you type.
 
 ## How it stays accurate
