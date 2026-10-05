@@ -116,7 +116,7 @@ Requires the Android SDK and JDK 17.
 | `./gradlew :app:installDebug` | Build and install on a connected device or emulator |
 | `./gradlew :app:testDebugUnitTest` | Unit tests — the filter, the word codec, geo maths, formatting |
 | `./gradlew :app:connectedDebugAndroidTest` | Room persistence tests (needs a device) |
-| `./gradlew assembleRelease` | Signed release build (see `keystore.properties.sample`) |
+| `./gradlew bundleRelease` | Signed release bundle for Play (see `keystore.properties.sample`) |
 
 `minSdk` 26 (Android 8.0) · `targetSdk` 36 · package `com.prempoddar.loadstone`
 
