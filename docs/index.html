@@ -236,13 +236,16 @@
         shrinks as the receiver locks on to more satellites.
       </p>
       <p class="body-copy">
-        While you are saving a pin, Loadstone keeps reading and averages the fixes by how much each
-        one can be trusted — tighter readings count more, wild ones are thrown out, and walking away
-        starts it over. You watch the number fall and save when you are happy with it.
+        While you are saving a pin, Loadstone keeps reading and folds every fix into a running
+        estimate, weighted by how much that reading can be trusted. Stand still and it converges;
+        walk, and the ground you covered fades out of it by itself. You watch the number fall and
+        save when you are happy with it.
       </p>
       <p class="body-copy">
-        The figure it shows is honest. Averaging cannot beat the hardware, so Loadstone never claims
-        to be more certain than the readings actually support.
+        The figure it shows is honest. Some of the error is shared by every reading in a row &mdash; a
+        signal bouncing off a wall is wrong the same way each time &mdash; and no amount of waiting
+        averages that out, so Loadstone never claims to be more certain than the readings support.
+        Stand on the spot again another day and it will sharpen the pin with that second visit.
       </p>
     </div>
     <div class="rings" aria-hidden="true">
@@ -288,11 +291,12 @@
       </div>
       <div class="feat">
         <h3>Photos of the place</h3>
-        <p>Snap the surroundings when you save a pin. They stay on your phone, and never travel in a shared link.</p>
+        <p>Snap the surroundings when you save a pin. They sit on the card, open full screen, and never travel when you share.</p>
       </div>
       <div class="feat">
-        <h3>Share a spot</h3>
-        <p>Send a pin as a link through any app. It opens straight in Loadstone, ready to save.</p>
+        <h3>Share a spot in words</h3>
+        <p>Seven funny words instead of a link &mdash; &ldquo;Grumpy walruses quietly juggle soggy waffles
+        backwards.&rdquo; Send it through any app, or read it down the phone.</p>
       </div>
       <div class="feat">
         <h3>Works without signal</h3>
@@ -322,7 +326,8 @@
       </p>
       <p class="body-copy">
         Your pins, notes and photos live on your phone. A pin only leaves your device when you
-        choose to share one, and a shared link carries the name, note and coordinates — never a photo.
+        choose to share one, and what you send is seven words encoding the coordinates &mdash; never the
+        name, the note or a photo.
       </p>
       <div class="cta-row" style="margin-top:26px;margin-bottom:0">
         <a class="btn btn-ghost" href="https://github.com/PremPoddar/Loadstone">Browse the code</a>
