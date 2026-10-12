@@ -9,6 +9,6 @@ const val LOADSTONE_BRAND = 0x3F51B5
 
 /** Loadstone's look: the shared expressive theme with the person's chosen colours. */
 @Composable
-fun LoadstoneTheme(appearance: Appearance = Appearance(dynamic = true), content: @Composable () -> Unit) {
+fun LoadstoneTheme(appearance: Appearance = Appearance(), content: @Composable () -> Unit) {
     AppTheme(appearance, LOADSTONE_BRAND, Typography, content)
 }

@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
                 imported?.let { appViewModel.onImport(it) }
             }
 
-            LoadstoneTheme(current?.appearance ?: com.prempoddar.loadstone.ui.design.Appearance(dynamic = true)) {
+            LoadstoneTheme(current?.appearance ?: com.prempoddar.loadstone.ui.design.Appearance()) {
                 CompositionLocalProvider(
                     LocalUnitSystem provides (current?.unitSystem ?: UnitSystem.METRIC),
                 ) {

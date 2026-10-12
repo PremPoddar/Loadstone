@@ -20,7 +20,7 @@ data class Settings(
     val onboardingComplete: Boolean,
     val arcHintDismissed: Boolean = false,
     /** Wallpaper colours, a chosen accent and black backgrounds; light or dark is [themeMode]. */
-    val dynamicColor: Boolean = true,
+    val dynamicColor: Boolean = false,
     val accent: Int? = null,
     val pureBlack: Boolean = false,
 ) {
@@ -56,7 +56,7 @@ class SettingsRepository @Inject constructor(
             themeMode = prefs[Keys.THEME]?.let { ThemeMode.valueOf(it) } ?: ThemeMode.SYSTEM,
             onboardingComplete = prefs[Keys.ONBOARDING] ?: false,
             arcHintDismissed = prefs[Keys.ARC_HINT] ?: false,
-            dynamicColor = prefs[Keys.DYNAMIC] ?: true,
+            dynamicColor = prefs[Keys.DYNAMIC] ?: false,
             accent = prefs[Keys.ACCENT],
             pureBlack = prefs[Keys.BLACK] ?: false,
         )
