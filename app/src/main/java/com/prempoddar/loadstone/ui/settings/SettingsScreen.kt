@@ -2,136 +2,61 @@ package com.prempoddar.loadstone.ui.settings
 
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.prempoddar.loadstone.BuildConfig
-import com.prempoddar.loadstone.data.settings.ThemeMode
 import com.prempoddar.loadstone.data.settings.UnitSystem
 import com.prempoddar.loadstone.share.AppLinks
+import com.prempoddar.loadstone.ui.design.ChoiceChips
+import com.prempoddar.loadstone.ui.design.ExpressiveScaffold
+import com.prempoddar.loadstone.ui.design.SettingsGroup
+import com.prempoddar.loadstone.ui.design.SettingsRow
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
+    onAppearance: () -> Unit = {},
+    onAbout: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsState()
     val context = LocalContext.current
-
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Settings") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-            )
-        },
-    ) { padding ->
-        val current = settings ?: return@Scaffold
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(28.dp),
-        ) {
-            Spacer(Modifier.height(4.dp))
-
-            SettingSection(title = "Distance units") {
-                val units = listOf(UnitSystem.METRIC to "Metric", UnitSystem.IMPERIAL to "Imperial")
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    units.forEachIndexed { index, (value, label) ->
-                        SegmentedButton(
-                            selected = current.unitSystem == value,
-                            onClick = { viewModel.setUnitSystem(value) },
-                            shape = SegmentedButtonDefaults.itemShape(index, units.size),
-                        ) { Text(label) }
-                    }
+    ExpressiveScaffold("Settings", onBack = onBack) { pad ->
+        val current = settings ?: return@ExpressiveScaffold
+        LazyColumn(contentPadding = PaddingValues(top = pad.calculateTopPadding(), bottom = pad.calculateBottomPadding() + 32.dp)) {
+            item {
+                SettingsGroup("Distances") {
+                    ChoiceChips(
+                        listOf(UnitSystem.METRIC to "Metres and kilometres", UnitSystem.IMPERIAL to "Feet and miles"),
+                        current.unitSystem, viewModel::setUnitSystem, Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    )
                 }
             }
-
-            SettingSection(title = "Appearance") {
-                val themes = listOf(
-                    ThemeMode.SYSTEM to "System",
-                    ThemeMode.LIGHT to "Light",
-                    ThemeMode.DARK to "Dark",
-                )
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    themes.forEachIndexed { index, (value, label) ->
-                        SegmentedButton(
-                            selected = current.themeMode == value,
-                            onClick = { viewModel.setThemeMode(value) },
-                            shape = SegmentedButtonDefaults.itemShape(index, themes.size),
-                        ) { Text(label) }
-                    }
+            item {
+                SettingsGroup("Look") {
+                    SettingsRow("Appearance", "Light or dark, colours", Icons.Rounded.Palette, onClick = onAppearance)
                 }
             }
-
-            SettingSection(title = "About") {
-                Text(
-                    "Loadstone ${BuildConfig.VERSION_NAME}",
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "Drop a pin, follow it back. Loadstone waits for your GPS to sharpen so every saved spot is exact. Location is used only while the app is open.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    "Privacy policy",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.clickable {
-                        runCatching {
-                            context.startActivity(
-                                Intent(Intent.ACTION_VIEW, Uri.parse(AppLinks.privacyUrl())),
-                            )
-                        }
-                    },
-                )
+            item {
+                SettingsGroup("Loadstone") {
+                    SettingsRow("About", "Version ${BuildConfig.VERSION_NAME}, who made it, licences", Icons.Rounded.Info, onClick = onAbout)
+                    SettingsRow("Privacy policy", "Location is used only while the app is open", Icons.Rounded.Shield, onClick = {
+                        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(AppLinks.privacyUrl()))) }
+                    })
+                }
             }
         }
-    }
-}
-
-@Composable
-private fun SettingSection(title: String, content: @Composable () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(
-            title,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        content()
     }
 }

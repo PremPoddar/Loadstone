@@ -19,7 +19,20 @@ data class Settings(
     val themeMode: ThemeMode,
     val onboardingComplete: Boolean,
     val arcHintDismissed: Boolean = false,
-)
+    /** Wallpaper colours, a chosen accent and black backgrounds; light or dark is [themeMode]. */
+    val dynamicColor: Boolean = true,
+    val accent: Int? = null,
+    val pureBlack: Boolean = false,
+) {
+    val appearance get() = com.prempoddar.loadstone.ui.design.Appearance(
+        mode = when (themeMode) {
+            ThemeMode.LIGHT -> com.prempoddar.loadstone.ui.design.Appearance.Mode.LIGHT
+            ThemeMode.DARK -> com.prempoddar.loadstone.ui.design.Appearance.Mode.DARK
+            ThemeMode.SYSTEM -> com.prempoddar.loadstone.ui.design.Appearance.Mode.SYSTEM
+        },
+        dynamic = dynamicColor, accent = accent, pureBlack = pureBlack,
+    )
+}
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
@@ -32,6 +45,9 @@ class SettingsRepository @Inject constructor(
         val THEME = stringPreferencesKey("theme_mode")
         val ONBOARDING = booleanPreferencesKey("onboarding_complete")
         val ARC_HINT = booleanPreferencesKey("arc_hint_dismissed")
+        val DYNAMIC = booleanPreferencesKey("dynamic_color")
+        val ACCENT = androidx.datastore.preferences.core.intPreferencesKey("accent")
+        val BLACK = booleanPreferencesKey("pure_black")
     }
 
     val settings: Flow<Settings> = context.dataStore.data.map { prefs ->
@@ -40,6 +56,9 @@ class SettingsRepository @Inject constructor(
             themeMode = prefs[Keys.THEME]?.let { ThemeMode.valueOf(it) } ?: ThemeMode.SYSTEM,
             onboardingComplete = prefs[Keys.ONBOARDING] ?: false,
             arcHintDismissed = prefs[Keys.ARC_HINT] ?: false,
+            dynamicColor = prefs[Keys.DYNAMIC] ?: true,
+            accent = prefs[Keys.ACCENT],
+            pureBlack = prefs[Keys.BLACK] ?: false,
         )
     }
 
@@ -53,6 +72,19 @@ class SettingsRepository @Inject constructor(
 
     suspend fun setThemeMode(mode: ThemeMode) {
         context.dataStore.edit { it[Keys.THEME] = mode.name }
+    }
+
+    suspend fun setAppearance(a: com.prempoddar.loadstone.ui.design.Appearance) {
+        context.dataStore.edit { p ->
+            p[Keys.THEME] = when (a.mode) {
+                com.prempoddar.loadstone.ui.design.Appearance.Mode.LIGHT -> ThemeMode.LIGHT
+                com.prempoddar.loadstone.ui.design.Appearance.Mode.DARK -> ThemeMode.DARK
+                com.prempoddar.loadstone.ui.design.Appearance.Mode.SYSTEM -> ThemeMode.SYSTEM
+            }.name
+            p[Keys.DYNAMIC] = a.dynamic
+            p[Keys.BLACK] = a.pureBlack
+            a.accent?.let { p[Keys.ACCENT] = it } ?: p.remove(Keys.ACCENT)
+        }
     }
 
     suspend fun setOnboardingComplete(complete: Boolean) {

@@ -24,6 +24,10 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.setUnitSystem(system) }
     }
 
+    fun setAppearance(a: com.prempoddar.loadstone.ui.design.Appearance) {
+        viewModelScope.launch { settingsRepository.setAppearance(a) }
+    }
+
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { settingsRepository.setThemeMode(mode) }
     }

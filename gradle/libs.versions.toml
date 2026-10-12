@@ -1,4 +1,5 @@
 [versions]
+materialColor = "2.0.0"
 agp = "8.9.2"
 kotlin = "2.1.0"
 ksp = "2.1.0-1.0.29"
@@ -21,6 +22,7 @@ androidxTestExtJunit = "1.2.1"
 androidxTestRunner = "1.6.2"
 
 [libraries]
+material-color-utilities = { group = "com.materialkolor", name = "material-color-utilities-android", version.ref = "materialColor" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-location-altitude = { group = "androidx.core", name = "core-location-altitude", version = "1.0.0" }
 androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycle" }

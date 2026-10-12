@@ -55,22 +55,7 @@ fun SavePinSheet(
     var note by remember { mutableStateOf(initialNote) }
     var category by remember { mutableStateOf(initialCategory) }
     var photos by remember { mutableStateOf(initialPhotos) }
-    var pendingFile by remember { mutableStateOf<File?>(null) }
-
-    val cameraLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.TakePicture(),
-    ) { success ->
-        val file = pendingFile
-        if (success && file != null) photos = photos + file.absolutePath
-        else if (file != null) PhotoStore.delete(file.absolutePath)
-        pendingFile = null
-    }
-
-    fun launchCamera() {
-        val file = PhotoStore.newPhotoFile(context)
-        pendingFile = file
-        cameraLauncher.launch(PhotoStore.uriFor(context, file))
-    }
+    val addPhotos = com.prempoddar.loadstone.ui.components.rememberPhotoAdder { added -> photos = photos + added }
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
@@ -101,7 +86,7 @@ fun SavePinSheet(
             Text("Photos", style = MaterialTheme.typography.labelLarge)
             PhotoRow(
                 paths = photos,
-                onAdd = { launchCamera() },
+                onAdd = addPhotos,
                 onRemove = { path ->
                     photos = photos - path
                     PhotoStore.delete(path)

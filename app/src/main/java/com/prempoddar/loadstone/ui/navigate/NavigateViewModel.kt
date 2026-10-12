@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import com.prempoddar.loadstone.data.photo.PhotoStore
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.max
@@ -240,11 +241,19 @@ class NavigateViewModel @Inject constructor(
         viewModelScope.launch { settings.setArcHintDismissed(true) }
     }
 
-    fun addPhoto(path: String) {
+    fun addPhotos(paths: List<String>) {
         val current = pin.value ?: return
-        val updated = current.copy(photoPaths = current.photoPaths + path)
+        val updated = current.copy(photoPaths = current.photoPaths + paths)
         pin.value = updated
         viewModelScope.launch { pinRepository.upsert(updated) }
+    }
+
+    fun removePhoto(path: String) {
+        val current = pin.value ?: return
+        val updated = current.copy(photoPaths = current.photoPaths - path)
+        pin.value = updated
+        viewModelScope.launch { pinRepository.upsert(updated) }
+        PhotoStore.delete(path)
     }
 
     companion object {

@@ -41,14 +41,7 @@ class MainActivity : ComponentActivity() {
                 imported?.let { appViewModel.onImport(it) }
             }
 
-            val systemDark = isSystemInDarkTheme()
-            val darkTheme = when (current?.themeMode) {
-                ThemeMode.LIGHT -> false
-                ThemeMode.DARK -> true
-                else -> systemDark
-            }
-
-            LoadstoneTheme(darkTheme = darkTheme) {
+            LoadstoneTheme(current?.appearance ?: com.prempoddar.loadstone.ui.design.Appearance(dynamic = true)) {
                 CompositionLocalProvider(
                     LocalUnitSystem provides (current?.unitSystem ?: UnitSystem.METRIC),
                 ) {

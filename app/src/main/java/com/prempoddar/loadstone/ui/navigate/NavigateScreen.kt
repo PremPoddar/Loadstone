@@ -69,19 +69,9 @@ fun NavigateScreen(
 
     var wasArrived by remember { mutableStateOf(false) }
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
-    var pendingFile by remember { mutableStateOf<File?>(null) }
-
-    val cameraLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.TakePicture(),
-    ) { success ->
-        val file = pendingFile
-        if (success && file != null) {
-            Haptics.confirm(view)
-            viewModel.addPhoto(file.absolutePath)
-        } else if (file != null) {
-            PhotoStore.delete(file.absolutePath)
-        }
-        pendingFile = null
+    val addPhotos = com.prempoddar.loadstone.ui.components.rememberPhotoAdder { added ->
+        Haptics.confirm(view)
+        viewModel.addPhotos(added)
     }
 
     LaunchedEffect(permission.hasPermission) {
@@ -251,12 +241,8 @@ fun NavigateScreen(
                     paths = pin.photoPaths,
                     modifier = Modifier.fillMaxWidth(),
                     thumbSize = 72.dp,
-                    onAdd = {
-                        Haptics.tap(view)
-                        val file = PhotoStore.newPhotoFile(context)
-                        pendingFile = file
-                        cameraLauncher.launch(PhotoStore.uriFor(context, file))
-                    },
+                    onAdd = { Haptics.tap(view); addPhotos() },
+                    onRemove = { path -> Haptics.tap(view); viewModel.removePhoto(path) },
                     onOpen = { path -> Haptics.tap(view); viewerIndex = pin.photoPaths.indexOf(path) },
                 )
             }
