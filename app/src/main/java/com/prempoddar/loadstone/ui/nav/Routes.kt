@@ -7,6 +7,7 @@ object Routes {
     const val SETTINGS = "settings"
     const val APPEARANCE = "appearance"
     const val ABOUT = "about"
+    const val RADAR = "radar"
 
     const val NAVIGATE_ARG_PIN_ID = "pinId"
     const val NAVIGATE = "navigate/{$NAVIGATE_ARG_PIN_ID}"

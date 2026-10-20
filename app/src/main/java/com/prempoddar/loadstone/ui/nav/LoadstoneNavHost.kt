@@ -45,6 +45,7 @@ fun LoadstoneNavHost(
                 onDropPin = { navController.navigate(Routes.DROP) },
                 onOpenPin = { id -> navController.navigate(Routes.navigate(id)) },
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                onOpenRadar = { navController.navigate(Routes.RADAR) },
             )
         }
         composable(Routes.DROP) {
@@ -64,6 +65,12 @@ fun LoadstoneNavHost(
                 onBack = { navController.popBackStack() },
                 onAppearance = { navController.navigate(Routes.APPEARANCE) },
                 onAbout = { navController.navigate(Routes.ABOUT) },
+            )
+        }
+        composable(Routes.RADAR) {
+            com.prempoddar.loadstone.ui.radar.RadarScreen(
+                onOpenPin = { id -> navController.navigate(Routes.navigate(id)) },
+                onBack = { navController.popBackStack() },
             )
         }
         composable(Routes.APPEARANCE) {

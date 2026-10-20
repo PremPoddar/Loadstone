@@ -1,5 +1,6 @@
 package com.prempoddar.loadstone.ui.home
 
+import androidx.compose.material.icons.filled.Radar
 import com.prempoddar.loadstone.ui.components.QrDialog
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.QrCode2
@@ -81,6 +82,7 @@ fun HomeScreen(
     onDropPin: () -> Unit,
     onOpenPin: (Long) -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenRadar: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -121,6 +123,9 @@ fun HomeScreen(
             CenterAlignedTopAppBar(
                 title = { Text("Loadstone", style = MaterialTheme.typography.titleLarge) },
                 actions = {
+                    IconButton(onClick = { Haptics.tap(view); onOpenRadar() }) {
+                        Icon(Icons.Filled.Radar, contentDescription = "Pins around you")
+                    }
                     IconButton(onClick = { Haptics.tap(view); scanQr() }) {
                         Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan a pin's QR code")
                     }

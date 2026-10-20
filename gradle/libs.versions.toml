@@ -25,6 +25,8 @@ androidxTestExtJunit = "1.2.1"
 androidxTestRunner = "1.6.2"
 
 [libraries]
+androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
 play-services-code-scanner = { group = "com.google.android.gms", name = "play-services-code-scanner", version.ref = "codeScanner" }
 androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }
