@@ -42,6 +42,18 @@ class CompassRepository @Inject constructor(
     /** False on phones with no magnetometer, which cannot point an arrow at all. */
     fun hasCompass(): Boolean = rotationSensor() != null
 
+    /** Air pressure in hPa, for steadying elevation; empty on phones without a barometer. */
+    fun pressure(): Flow<Float> = callbackFlow {
+        val sensor = sensorManager.getDefaultSensor(android.hardware.Sensor.TYPE_PRESSURE)
+        if (sensor == null) { close(); return@callbackFlow }
+        val listener = object : android.hardware.SensorEventListener {
+            override fun onSensorChanged(event: android.hardware.SensorEvent) { trySend(event.values[0]) }
+            override fun onAccuracyChanged(sensor: android.hardware.Sensor?, accuracy: Int) = Unit
+        }
+        sensorManager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_NORMAL)
+        awaitClose { sensorManager.unregisterListener(listener) }
+    }
+
     fun headings(): Flow<Heading> = callbackFlow {
         val sensor = rotationSensor()
         if (sensor == null) {

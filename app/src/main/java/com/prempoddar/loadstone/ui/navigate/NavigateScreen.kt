@@ -224,10 +224,20 @@ fun NavigateScreen(
                         color = MaterialTheme.colorScheme.primary,
                     )
                 }
-                pin?.elevationMeters?.let { elev ->
+                // Where you are and where the pin is, so a climb or a descent ahead is no surprise.
+                val here = state.elevationMeters
+                val there = pin?.elevationMeters
+                if (here != null || there != null) {
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        "~${UnitFormatter.formatElevation(elev, unit)} elevation · approximate",
+                        listOfNotNull(
+                            here?.let { "You ~${UnitFormatter.formatElevation(it, unit)}" },
+                            there?.let { "Pin ~${UnitFormatter.formatElevation(it, unit)}" },
+                            if (here != null && there != null && kotlin.math.abs(there - here) >= 3) {
+                                val d = there - here
+                                (if (d > 0) "climb " else "descend ") + UnitFormatter.formatElevation(kotlin.math.abs(d), unit)
+                            } else null,
+                        ).joinToString(" · ") + " · above sea level",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.outline,
                     )

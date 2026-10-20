@@ -56,6 +56,8 @@ data class NavigateUiState(
     /** True when this visit is a better measurement than the pin holds, so it is worth saving. */
     val canRefine: Boolean = false,
     val refined: Boolean = false,
+    /** Where you are standing now, above sea level; steadied by the barometer when there is one. */
+    val elevationMeters: Double? = null,
 )
 
 /** The parts of a position estimate that navigation needs, kept free of android.location for tests. */
@@ -136,7 +138,7 @@ class NavigateViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val pinRepository: PinRepository,
     private val locationRepository: LocationRepository,
-    compassRepository: CompassRepository,
+    private val compass: CompassRepository,
     settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
@@ -156,14 +158,17 @@ class NavigateViewModel @Inject constructor(
     private val refined = MutableStateFlow(false)
     private var started = false
 
-    private val compassAvailable = compassRepository.hasCompass()
+    private val compassAvailable = compass.hasCompass()
+
+    private val elevation = com.prempoddar.loadstone.core.geo.ElevationFusion()
+    private val liveElevation = MutableStateFlow<Double?>(null)
 
     // The compass runs from the moment the screen opens. It used to start only after the first
     // precise GPS fix, and everything waited on it, so until then (and for good on phones without
     // the sensor) the screen showed no pin, no distance and a frozen arrow.
     private val heading: Flow<Heading?> = flow {
         emit(null)
-        emitAll(compassRepository.headings())
+        emitAll(compass.headings())
     }
 
     // Declination drifts over hundreds of km, so recompute it only on entering a new ~11 km cell.
@@ -188,7 +193,8 @@ class NavigateViewModel @Inject constructor(
     private var lastCorrected: PinFix? = null
 
     val uiState: StateFlow<NavigateUiState> =
-        combine(pin, fix, heading, refined) { p, f, head, didRefine ->
+        combine(combine(pin, fix, heading, refined) { p, f, h, r -> NavInputs(p, f, h, r) }, liveElevation) { inputs, elev ->
+            val (p, f, head, didRefine) = inputs
             val compassTrue = if (head != null && f != null) {
                 GeoMath.normalize360(head.magneticDegrees + declinationAt(f).toDouble())
             } else {
@@ -205,7 +211,7 @@ class NavigateViewModel @Inject constructor(
                 compassAccuracyClass = head?.accuracyClass,
                 compassAvailable = compassAvailable,
                 refined = didRefine,
-            )
+            ).copy(elevationMeters = elev)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), NavigateUiState())
 
     init {
@@ -219,7 +225,13 @@ class NavigateViewModel @Inject constructor(
         viewModelScope.launch {
             locationRepository.estimatedFixes()
                 .catch { /* handled by the waiting UI */ }
-                .collect { fix.value = it }
+                .collect {
+                    fix.value = it
+                    it.altitudeMeters?.let { a -> elevation.onGps(a, it.estAccuracyMeters); liveElevation.value = elevation.meters }
+                }
+        }
+        viewModelScope.launch {
+            compass.pressure().catch { }.collect { elevation.onPressure(it); liveElevation.value = elevation.meters }
         }
     }
 
@@ -279,3 +291,5 @@ class NavigateViewModel @Inject constructor(
         const val MIN_ARRIVE_RADIUS = 6.0
     }
 }
+
+private data class NavInputs(val pin: Pin?, val fix: PinFix?, val heading: Heading?, val refined: Boolean)
