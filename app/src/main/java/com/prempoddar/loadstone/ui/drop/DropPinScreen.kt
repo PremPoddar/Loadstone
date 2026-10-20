@@ -116,7 +116,7 @@ fun DropPinScreen(
                         state.fix == null -> "Finding your position…"
                         state.stabilized -> "Great accuracy — ready to save"
                         !state.accurateEnough -> "Too rough to save yet — hold still…"
-                        else -> "Good enough to save — hold still for sharper"
+                        else -> "Good enough to save — it keeps sharpening while you stay put"
                     },
                     style = MaterialTheme.typography.titleMedium,
                     color = statusColor,
@@ -132,7 +132,8 @@ fun DropPinScreen(
                 state.fix?.let { fix ->
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        if (fix.sampleCount == 1) "1 reading" else "${fix.sampleCount} readings",
+                        (if (fix.sampleCount == 1) "1 reading" else "${fix.sampleCount} readings") +
+                            (state.satellites?.let { " · ${it.used} of ${it.visible} satellites" } ?: ""),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.outline,
                     )

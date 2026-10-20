@@ -25,6 +25,7 @@ data class DropUiState(
      * saving from it put the pin wherever they had wandered to by the time they tapped Save.
      */
     val lockedFix: PinFix? = null,
+    val satellites: com.prempoddar.loadstone.data.location.LocationRepository.Satellites? = null,
 ) {
     /**
      * A pin is only worth saving once the estimate is tight enough to walk back to. Saving a
@@ -58,6 +59,7 @@ data class DropUiState(
 class DropPinViewModel @Inject constructor(
     private val locationRepository: LocationRepository,
     private val pinRepository: PinRepository,
+    private val polisher: com.prempoddar.loadstone.data.pin.PinPolisher,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DropUiState())
@@ -69,6 +71,9 @@ class DropPinViewModel @Inject constructor(
     fun startMeasuring() {
         if (started) return
         started = true
+        viewModelScope.launch {
+            locationRepository.satellites().catch { }.collect { _state.value = _state.value.copy(satellites = it) }
+        }
         viewModelScope.launch {
             locationRepository.estimatedFixes()
                 .catch { /* ignore; user sees the waiting state */ }
@@ -100,9 +105,12 @@ class DropPinViewModel @Inject constructor(
         onSaved: () -> Unit,
     ) {
         val pin = _state.value.pinToSave(name, note, category, photoPaths) ?: return
+        val spot = _state.value.lockedFix ?: return
         _state.value = _state.value.copy(saving = true)
         viewModelScope.launch {
-            pinRepository.upsert(pin)
+            val id = pinRepository.upsert(pin)
+            // Keep sharpening while the person is still standing there.
+            polisher.polish(id, spot)
             onSaved()
         }
     }

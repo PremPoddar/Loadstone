@@ -27,7 +27,26 @@ import javax.inject.Singleton
 class LocationRepository @Inject constructor(
     private val fused: FusedLocationProviderClient,
     private val altitudeCorrector: AltitudeCorrector,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context,
 ) {
+    /** Satellites the receiver is using for its fix, and how many it can see. */
+    data class Satellites(val used: Int, val visible: Int)
+
+    @SuppressLint("MissingPermission")
+    fun satellites(): Flow<Satellites> = callbackFlow {
+        val manager = context.getSystemService(android.location.LocationManager::class.java)
+        val callback = object : android.location.GnssStatus.Callback() {
+            override fun onSatelliteStatusChanged(status: android.location.GnssStatus) {
+                var used = 0
+                for (i in 0 until status.satelliteCount) if (status.usedInFix(i)) used++
+                trySend(Satellites(used, status.satelliteCount))
+            }
+        }
+        val ok = runCatching { manager.registerGnssStatusCallback(callback, android.os.Handler(android.os.Looper.getMainLooper())) }.getOrDefault(false)
+        if (!ok) close()
+        awaitClose { manager.unregisterGnssStatusCallback(callback) }
+    }
+
     @SuppressLint("MissingPermission")
     fun estimatedFixes(): Flow<PinFix> = callbackFlow {
         val estimator = PositionEstimator()

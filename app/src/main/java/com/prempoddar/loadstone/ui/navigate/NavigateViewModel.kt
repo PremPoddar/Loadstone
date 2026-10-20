@@ -183,16 +183,25 @@ class NavigateViewModel @Inject constructor(
         return declination
     }
 
+    // Learns the compass's local error from the direction you walk; see CourseCorrection.
+    private val correction = com.prempoddar.loadstone.core.geo.CourseCorrection()
+    private var lastCorrected: PinFix? = null
+
     val uiState: StateFlow<NavigateUiState> =
         combine(pin, fix, heading, refined) { p, f, head, didRefine ->
+            val compassTrue = if (head != null && f != null) {
+                GeoMath.normalize360(head.magneticDegrees + declinationAt(f).toDouble())
+            } else {
+                null
+            }
+            if (f != null && f !== lastCorrected) {
+                lastCorrected = f
+                correction.update(f, compassTrue, android.os.SystemClock.elapsedRealtime())
+            }
             navigateState(
                 pin = p,
                 fix = f?.let { NavFix(it.latitude, it.longitude, it.estAccuracyMeters, it.settled) },
-                trueHeading = if (head != null && f != null) {
-                    GeoMath.normalize360(head.magneticDegrees + declinationAt(f).toDouble())
-                } else {
-                    null
-                },
+                trueHeading = compassTrue?.let(correction::apply),
                 compassAccuracyClass = head?.accuracyClass,
                 compassAvailable = compassAvailable,
                 refined = didRefine,
