@@ -1,5 +1,6 @@
 package com.prempoddar.loadstone.ui.components
 
+import com.prempoddar.loadstone.ui.design.tap
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -87,7 +88,7 @@ fun PhotoViewerDialog(
             }
 
             IconButton(
-                onClick = onDismiss,
+                onClick = tap(onDismiss),
                 modifier = Modifier.align(Alignment.TopEnd).padding(12.dp),
             ) {
                 Icon(Icons.Filled.Close, contentDescription = "Close", tint = Color.White)
@@ -95,7 +96,7 @@ fun PhotoViewerDialog(
 
             if (onDelete != null) {
                 IconButton(
-                    onClick = { onDelete(paths[pagerState.currentPage]) },
+                    onClick = tap { onDelete(paths[pagerState.currentPage]) },
                     modifier = Modifier.align(Alignment.TopStart).padding(12.dp),
                 ) {
                     Icon(Icons.Filled.DeleteOutline, contentDescription = "Delete photo", tint = Color.White)

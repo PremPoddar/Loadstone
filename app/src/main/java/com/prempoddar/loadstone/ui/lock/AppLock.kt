@@ -1,5 +1,6 @@
 package com.prempoddar.loadstone.ui.lock
 
+import com.prempoddar.loadstone.ui.design.tap
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
@@ -63,7 +64,7 @@ fun LockScreen(activity: FragmentActivity, onUnlocked: () -> Unit) {
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp, bottom = 24.dp),
             )
-            Button(onClick = { promptUnlock(activity, onUnlocked) }) { Text("Unlock") }
+            Button(onClick = tap { promptUnlock(activity, onUnlocked) }) { Text("Unlock") }
         }
     }
 }

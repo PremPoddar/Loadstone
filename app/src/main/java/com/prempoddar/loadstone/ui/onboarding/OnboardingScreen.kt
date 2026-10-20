@@ -1,5 +1,6 @@
 package com.prempoddar.loadstone.ui.onboarding
 
+import com.prempoddar.loadstone.ui.design.tap
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.togetherWith
@@ -78,7 +79,7 @@ fun OnboardingScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
             ) {
-                TextButton(onClick = { viewModel.complete(onFinished) }) { Text("Skip") }
+                TextButton(onClick = tap { viewModel.complete(onFinished) }) { Text("Skip") }
             }
 
             HorizontalPager(
@@ -115,7 +116,7 @@ fun OnboardingScreen(
             }
 
             Button(
-                onClick = {
+                onClick = tap {
                     if (onLast) viewModel.complete(onFinished)
                     else scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
                 },

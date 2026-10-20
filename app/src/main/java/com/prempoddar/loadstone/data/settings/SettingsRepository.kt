@@ -23,6 +23,8 @@ data class Settings(
     val dynamicColor: Boolean = false,
     val accent: Int? = null,
     val pureBlack: Boolean = false,
+    /** Font, shapes, haptics and the rest of Look & feel, as saved by Appearance.extras. */
+    val look: String? = null,
     /** Ask for fingerprint, face or the screen lock to open the app. */
     val appLock: Boolean = false,
     /** Recording every fix to a file, for accuracy testing. */
@@ -35,7 +37,7 @@ data class Settings(
             ThemeMode.SYSTEM -> com.prempoddar.loadstone.ui.design.Appearance.Mode.SYSTEM
         },
         dynamic = dynamicColor, accent = accent, pureBlack = pureBlack,
-    )
+    ).withExtras(look)
 }
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -52,6 +54,7 @@ class SettingsRepository @Inject constructor(
         val DYNAMIC = booleanPreferencesKey("dynamic_color")
         val ACCENT = androidx.datastore.preferences.core.intPreferencesKey("accent")
         val BLACK = booleanPreferencesKey("pure_black")
+        val LOOK = stringPreferencesKey("look")
         val LOCK = booleanPreferencesKey("app_lock")
         val LOG = booleanPreferencesKey("accuracy_log")
     }
@@ -65,6 +68,7 @@ class SettingsRepository @Inject constructor(
             dynamicColor = prefs[Keys.DYNAMIC] ?: false,
             accent = prefs[Keys.ACCENT],
             pureBlack = prefs[Keys.BLACK] ?: false,
+            look = prefs[Keys.LOOK],
             appLock = prefs[Keys.LOCK] ?: false,
             accuracyLog = prefs[Keys.LOG] ?: false,
         )
@@ -91,6 +95,7 @@ class SettingsRepository @Inject constructor(
             }.name
             p[Keys.DYNAMIC] = a.dynamic
             p[Keys.BLACK] = a.pureBlack
+            p[Keys.LOOK] = a.extras()
             a.accent?.let { p[Keys.ACCENT] = it } ?: p.remove(Keys.ACCENT)
         }
     }

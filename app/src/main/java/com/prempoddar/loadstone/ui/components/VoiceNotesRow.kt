@@ -1,5 +1,6 @@
 package com.prempoddar.loadstone.ui.components
 
+import com.prempoddar.loadstone.ui.design.tap
 import android.Manifest
 import android.content.pm.PackageManager
 import android.media.MediaPlayer
@@ -68,7 +69,7 @@ fun VoiceNotesRow(notes: List<String>, onAdd: (String) -> Unit, onRemove: (Strin
             val length = remember(path) { VoiceRecorder.durationMs(path) }
             InputChip(
                 selected = playing == path,
-                onClick = { play(path) },
+                onClick = tap { play(path) },
                 label = { Text("Note ${i + 1} · ${clock(length)}") },
                 leadingIcon = { Icon(if (playing == path) Icons.Filled.Stop else Icons.Filled.PlayArrow, null, Modifier.size(18.dp)) },
                 trailingIcon = {
@@ -81,7 +82,7 @@ fun VoiceNotesRow(notes: List<String>, onAdd: (String) -> Unit, onRemove: (Strin
         }
         InputChip(
             selected = recording,
-            onClick = {
+            onClick = tap {
                 if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) toggle()
                 else ask.launch(Manifest.permission.RECORD_AUDIO)
             },

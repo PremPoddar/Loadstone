@@ -1,5 +1,6 @@
 package com.prempoddar.loadstone.ui.home
 
+import com.prempoddar.loadstone.ui.design.tap
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -71,12 +72,12 @@ fun AddFromWordsDialog(
         confirmButton = {
             TextButton(
                 enabled = location != null,
-                onClick = {
+                onClick = tap {
                     location?.let { onAdd(it.latitude, it.longitude, name.trim().ifBlank { "Shared pin" }) }
                 },
             ) { Text("Add pin") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = tap(onDismiss)) { Text("Cancel") } },
     )
 }
 

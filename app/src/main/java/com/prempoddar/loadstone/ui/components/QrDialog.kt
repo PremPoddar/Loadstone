@@ -1,5 +1,6 @@
 package com.prempoddar.loadstone.ui.components
 
+import com.prempoddar.loadstone.ui.design.tap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -45,6 +46,6 @@ fun QrDialog(pin: Pin, onDismiss: () -> Unit) {
                 )
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } },
+        confirmButton = { TextButton(onClick = tap(onDismiss)) { Text("Done") } },
     )
 }

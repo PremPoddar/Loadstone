@@ -1,5 +1,6 @@
 package com.prempoddar.loadstone.ui.navigate
 
+import com.prempoddar.loadstone.ui.design.tap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -226,7 +227,7 @@ fun NavigateScreen(
                 }
                 if (state.canRefine) {
                     Spacer(Modifier.height(4.dp))
-                    TextButton(onClick = { Haptics.confirm(view); viewModel.refineFromHere() }) {
+                    TextButton(onClick = tap { Haptics.confirm(view); viewModel.refineFromHere() }) {
                         Text("I'm standing on it — sharpen this pin")
                     }
                 } else if (state.refined) {
@@ -352,7 +353,7 @@ private fun ArcHintBanner(onDismiss: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
             )
-            IconButton(onClick = onDismiss) {
+            IconButton(onClick = tap(onDismiss)) {
                 Icon(
                     Icons.Filled.Close,
                     contentDescription = "Dismiss",
@@ -404,8 +405,8 @@ private fun PermissionGate(onGrant: () -> Unit, onBack: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(16.dp))
-        TextButton(onClick = onGrant) { Text("Grant location access") }
-        TextButton(onClick = onBack) { Text("Back") }
+        TextButton(onClick = tap(onGrant)) { Text("Grant location access") }
+        TextButton(onClick = tap(onBack)) { Text("Back") }
     }
 }
 
@@ -439,8 +440,8 @@ private fun WaysBack(
         if (pin.trail.size >= 2) {
             val length = com.prempoddar.loadstone.core.geo.Trail.length(pin.trail)
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                SegmentedButton(selected = !state.retracing, onClick = { onRetrace(false) }, shape = SegmentedButtonDefaults.itemShape(0, 2)) { Text("Straight line") }
-                SegmentedButton(selected = state.retracing, onClick = { onRetrace(true) }, shape = SegmentedButtonDefaults.itemShape(1, 2)) {
+                SegmentedButton(selected = !state.retracing, onClick = tap { onRetrace(false) }, shape = SegmentedButtonDefaults.itemShape(0, 2)) { Text("Straight line") }
+                SegmentedButton(selected = state.retracing, onClick = tap { onRetrace(true) }, shape = SegmentedButtonDefaults.itemShape(1, 2)) {
                     Text("My path · ${UnitFormatter.formatDistance(length, unit)}")
                 }
             }
@@ -456,18 +457,18 @@ private fun WaysBack(
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             if (mine?.guiding == true) {
-                FilledTonalButton(onClick = { com.prempoddar.loadstone.guide.GuideService.stop(context) }, modifier = Modifier.weight(1f)) { Text("Stop guiding") }
+                FilledTonalButton(onClick = tap { com.prempoddar.loadstone.guide.GuideService.stop(context) }, modifier = Modifier.weight(1f)) { Text("Stop guiding") }
             } else {
                 FilledTonalButton(
-                    onClick = { withNotifications { com.prempoddar.loadstone.guide.GuideService.guide(context, pin.id) } },
+                    onClick = tap { withNotifications { com.prempoddar.loadstone.guide.GuideService.guide(context, pin.id) } },
                     modifier = Modifier.weight(1f),
                 ) { Icon(Icons.Filled.Notifications, null, Modifier.size(18.dp)); Text("  Screen off", maxLines = 1) }
             }
             if (mine?.recording == true) {
-                FilledTonalButton(onClick = { com.prempoddar.loadstone.guide.GuideService.stop(context) }, modifier = Modifier.weight(1f)) { Text("Stop recording") }
+                FilledTonalButton(onClick = tap { com.prempoddar.loadstone.guide.GuideService.stop(context) }, modifier = Modifier.weight(1f)) { Text("Stop recording") }
             } else {
                 OutlinedButton(
-                    onClick = { withNotifications { com.prempoddar.loadstone.guide.GuideService.record(context, pin.id) } },
+                    onClick = tap { withNotifications { com.prempoddar.loadstone.guide.GuideService.record(context, pin.id) } },
                     modifier = Modifier.weight(1f),
                 ) { Icon(Icons.Filled.Route, null, Modifier.size(18.dp)); Text(if (pin.trail.size >= 2) "  Record again" else "  Record my way", maxLines = 1) }
             }

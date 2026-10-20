@@ -1,5 +1,6 @@
 package com.prempoddar.loadstone.ui.home
 
+import com.prempoddar.loadstone.ui.design.tap
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Radar
 import com.prempoddar.loadstone.ui.components.QrDialog
@@ -140,7 +141,7 @@ fun HomeScreen(
                     IconButton(onClick = { Haptics.tap(view); addingFromWords = true }) {
                         Icon(Icons.Filled.Abc, contentDescription = "Add from words")
                     }
-                    IconButton(onClick = onOpenSettings) {
+                    IconButton(onClick = tap(onOpenSettings)) {
                         Icon(Icons.Filled.Settings, contentDescription = "Settings")
                     }
                 },
@@ -148,7 +149,7 @@ fun HomeScreen(
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { Haptics.tap(view); onDropPin() },
+                onClick = tap { Haptics.tap(view); onDropPin() },
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 text = { Text("Drop pin") },
             )
@@ -169,10 +170,10 @@ fun HomeScreen(
                 // Folders, when any are in use: tap one to see just its pins.
                 if (folders.isNotEmpty()) item(key = "folders") {
                     androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 4.dp)) {
-                        item { androidx.compose.material3.FilterChip(selected = folderFilter == null, onClick = { folderFilter = null }, label = { Text("All") }) }
+                        item { androidx.compose.material3.FilterChip(selected = folderFilter == null, onClick = tap { folderFilter = null }, label = { Text("All") }) }
                         items(folders) { f ->
                             androidx.compose.material3.FilterChip(
-                                selected = folderFilter == f, onClick = { folderFilter = if (folderFilter == f) null else f },
+                                selected = folderFilter == f, onClick = tap { folderFilter = if (folderFilter == f) null else f },
                                 label = { Text(f) }, leadingIcon = { Icon(Icons.Filled.Folder, null, Modifier.size(18.dp)) },
                             )
                         }
@@ -209,12 +210,12 @@ fun HomeScreen(
             title = { Text("Delete pin?") },
             text = { Text("\"${pin.name}\" will be removed. This can't be undone.") },
             confirmButton = {
-                TextButton(onClick = {
+                TextButton(onClick = tap {
                     Haptics.confirm(view); viewModel.delete(pin.id); com.prempoddar.loadstone.ui.util.PinShortcuts.removed(context, pin.id); pendingDelete = null
                 }) { Text("Delete") }
             },
             dismissButton = {
-                TextButton(onClick = { pendingDelete = null }) { Text("Cancel") }
+                TextButton(onClick = tap { pendingDelete = null }) { Text("Cancel") }
             },
         )
     }
@@ -418,34 +419,34 @@ private fun PinRow(
                 )
             }
             Box {
-                IconButton(onClick = { menuOpen = true }) {
+                IconButton(onClick = tap { menuOpen = true }) {
                     Icon(Icons.Filled.MoreVert, contentDescription = "More")
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                     DropdownMenuItem(
                         text = { Text("Open in Maps") },
                         leadingIcon = { Icon(Icons.Filled.Map, contentDescription = null) },
-                        onClick = { menuOpen = false; onOpenMaps() },
+                        onClick = tap { menuOpen = false; onOpenMaps() },
                     )
                     DropdownMenuItem(
                         text = { Text("Share as words") },
                         leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
-                        onClick = { menuOpen = false; onShare() },
+                        onClick = tap { menuOpen = false; onShare() },
                     )
                     DropdownMenuItem(
                         text = { Text("Show QR code") },
                         leadingIcon = { Icon(Icons.Filled.QrCode2, contentDescription = null) },
-                        onClick = { menuOpen = false; onShowQr() },
+                        onClick = tap { menuOpen = false; onShowQr() },
                     )
                     DropdownMenuItem(
                         text = { Text("Edit") },
                         leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
-                        onClick = { menuOpen = false; onEdit() },
+                        onClick = tap { menuOpen = false; onEdit() },
                     )
                     DropdownMenuItem(
                         text = { Text("Delete") },
                         leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
-                        onClick = { menuOpen = false; onDelete() },
+                        onClick = tap { menuOpen = false; onDelete() },
                     )
                 }
             }

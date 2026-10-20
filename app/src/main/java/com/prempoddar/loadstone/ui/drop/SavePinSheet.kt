@@ -1,5 +1,7 @@
 package com.prempoddar.loadstone.ui.drop
 
+import com.prempoddar.loadstone.ui.design.tap
+import com.prempoddar.loadstone.ui.design.toggled
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Switch
@@ -110,7 +112,7 @@ fun SavePinSheet(
             )
             if (folders.isNotEmpty()) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    folders.forEach { f -> FilterChip(selected = folder == f, onClick = { folder = if (folder == f) "" else f }, label = { Text(f) }) }
+                    folders.forEach { f -> FilterChip(selected = folder == f, onClick = tap { folder = if (folder == f) "" else f }, label = { Text(f) }) }
                 }
             }
 
@@ -120,7 +122,7 @@ fun SavePinSheet(
                     val v = cat.visual()
                     FilterChip(
                         selected = category == cat,
-                        onClick = { Haptics.select(view); category = cat },
+                        onClick = tap { Haptics.select(view); category = cat },
                         label = { Text(v.label) },
                         leadingIcon = { Icon(v.icons.first(), contentDescription = null) },
                     )
@@ -134,12 +136,12 @@ fun SavePinSheet(
                         Text("Record my way from here", style = MaterialTheme.typography.bodyLarge)
                         Text("Retrace your exact route back later", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Switch(checked = record, onCheckedChange = { record = it; onRecordChoice(it) })
+                    Switch(checked = record, onCheckedChange = toggled { record = it; onRecordChoice(it) })
                 }
             }
 
             Button(
-                onClick = { Haptics.confirm(view); onSave(name, note, category, photos, folder.trim().ifBlank { null }) },
+                onClick = tap { Haptics.confirm(view); onSave(name, note, category, photos, folder.trim().ifBlank { null }) },
                 enabled = name.isNotBlank(),
                 modifier = Modifier
                     .fillMaxWidth()

@@ -1,5 +1,6 @@
 package com.prempoddar.loadstone.ui.radar
 
+import com.prempoddar.loadstone.ui.design.tap
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -86,7 +87,7 @@ fun RadarScreen(onOpenPin: (Long) -> Unit, onBack: () -> Unit, viewModel: RadarV
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Around you") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
+                navigationIcon = { IconButton(onClick = tap(onBack)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
             )
         },
     ) { pad ->
@@ -103,7 +104,7 @@ fun RadarScreen(onOpenPin: (Long) -> Unit, onBack: () -> Unit, viewModel: RadarV
                 }
             }
             Row(Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                FilledTonalIconButton(onClick = { step(-1) }) { Icon(Icons.Filled.Remove, "Closer in") }
+                FilledTonalIconButton(onClick = tap { step(-1) }) { Icon(Icons.Filled.Remove, "Closer in") }
                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Edge: ${UnitFormatter.formatDistance(range, unit)}", style = MaterialTheme.typography.titleMedium)
                     Text(
@@ -112,7 +113,7 @@ fun RadarScreen(onOpenPin: (Long) -> Unit, onBack: () -> Unit, viewModel: RadarV
                         modifier = Modifier.pointerInput(Unit) { detectTapGestures { chosenRange = null } },
                     )
                 }
-                FilledTonalIconButton(onClick = { step(1) }) { Icon(Icons.Filled.Add, "Further out") }
+                FilledTonalIconButton(onClick = tap { step(1) }) { Icon(Icons.Filled.Add, "Further out") }
             }
             val beyond = distances.count { it > range }
             if (beyond > 0) {

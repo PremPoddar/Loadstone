@@ -1,5 +1,6 @@
 package com.prempoddar.loadstone.ui.drop
 
+import com.prempoddar.loadstone.ui.design.tap
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -73,7 +74,7 @@ fun DropPinScreen(
             CenterAlignedTopAppBar(
                 title = { Text("Drop a pin") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = tap(onBack)) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -143,7 +144,7 @@ fun DropPinScreen(
                     val unit = LocalUnitSystem.current
                     Spacer(Modifier.height(10.dp))
                     AssistChip(
-                        onClick = {},
+                        onClick = tap {},
                         leadingIcon = { Icon(Icons.Filled.Terrain, contentDescription = null) },
                         label = { Text("Elevation ~${UnitFormatter.formatElevation(elevation, unit)}") },
                     )
@@ -158,7 +159,7 @@ fun DropPinScreen(
             }
 
             Button(
-                onClick = { com.prempoddar.loadstone.ui.util.Haptics.tap(view); viewModel.lockSpot() },
+                onClick = tap { com.prempoddar.loadstone.ui.util.Haptics.tap(view); viewModel.lockSpot() },
                 enabled = state.canSave,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -239,6 +240,6 @@ private fun PermissionPrompt(onGrant: () -> Unit, modifier: Modifier = Modifier)
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(24.dp))
-        OutlinedButton(onClick = onGrant) { Text("Grant location access") }
+        OutlinedButton(onClick = tap(onGrant)) { Text("Grant location access") }
     }
 }

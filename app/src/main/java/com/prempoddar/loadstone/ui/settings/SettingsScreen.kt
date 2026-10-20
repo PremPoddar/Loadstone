@@ -65,7 +65,7 @@ fun SettingsScreen(
             }
             item {
                 SettingsGroup("Look") {
-                    SettingsRow("Appearance", "Light or dark, colours", Icons.Rounded.Palette, onClick = onAppearance)
+                    SettingsRow("Look & feel", "Theme, colours, font, shapes and haptics", Icons.Rounded.Palette, onClick = onAppearance)
                 }
             }
             item {

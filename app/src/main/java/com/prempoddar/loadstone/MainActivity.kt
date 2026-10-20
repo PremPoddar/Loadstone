@@ -42,6 +42,7 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        com.prempoddar.loadstone.ui.design.Haptics.attach(window.decorView)
         enableEdgeToEdge()
         val imported = parseIncomingLink(intent)
         val shortcutRoute = routeFor(intent)
