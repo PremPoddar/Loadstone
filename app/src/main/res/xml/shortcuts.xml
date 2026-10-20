@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="drop"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_drop"
+        android:shortcutShortLabel="@string/shortcut_drop">
+        <intent
+            android:action="com.prempoddar.loadstone.action.DROP"
+            android:targetClass="com.prempoddar.loadstone.MainActivity"
+            android:targetPackage="com.prempoddar.loadstone" />
+    </shortcut>
+</shortcuts>

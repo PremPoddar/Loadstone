@@ -292,6 +292,21 @@ class NavigateViewModel @Inject constructor(
         viewModelScope.launch { pinRepository.upsert(updated) }
     }
 
+    fun addVoiceNote(path: String) {
+        val current = pin.value ?: return
+        val updated = current.copy(voiceNotes = current.voiceNotes + path)
+        pin.value = updated
+        viewModelScope.launch { pinRepository.upsert(updated) }
+    }
+
+    fun removeVoiceNote(path: String) {
+        val current = pin.value ?: return
+        val updated = current.copy(voiceNotes = current.voiceNotes - path)
+        pin.value = updated
+        viewModelScope.launch { pinRepository.upsert(updated) }
+        com.prempoddar.loadstone.data.voice.VoiceRecorder.delete(path)
+    }
+
     fun removePhoto(path: String) {
         val current = pin.value ?: return
         val updated = current.copy(photoPaths = current.photoPaths - path)

@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Loadstone</string>
+    <string name="shortcut_drop">Drop a pin</string>
 </resources>

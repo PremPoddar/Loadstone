@@ -23,6 +23,8 @@ import com.prempoddar.loadstone.ui.design.ChoiceChips
 import com.prempoddar.loadstone.ui.design.ExpressiveScaffold
 import com.prempoddar.loadstone.ui.design.SettingsGroup
 import com.prempoddar.loadstone.ui.design.SettingsRow
+import com.prempoddar.loadstone.ui.design.SwitchRow
+import androidx.compose.material.icons.rounded.Lock
 
 @Composable
 fun SettingsScreen(
@@ -47,6 +49,16 @@ fun SettingsScreen(
             item {
                 SettingsGroup("Look") {
                     SettingsRow("Appearance", "Light or dark, colours", Icons.Rounded.Palette, onClick = onAppearance)
+                }
+            }
+            item {
+                SettingsGroup("Privacy") {
+                    SwitchRow("App lock", "Fingerprint, face or screen lock to open Loadstone", Icons.Rounded.Lock, checked = current.appLock) { on ->
+                        val ok = androidx.biometric.BiometricManager.from(context).canAuthenticate(com.prempoddar.loadstone.ui.lock.LOCK_AUTHENTICATORS) ==
+                            androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS
+                        if (!on || ok) viewModel.setAppLock(on)
+                        else android.widget.Toast.makeText(context, "Set a screen lock on this phone first", android.widget.Toast.LENGTH_LONG).show()
+                    }
                 }
             }
             item {

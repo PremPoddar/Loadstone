@@ -109,6 +109,9 @@ dependencies {
 
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.play.services.location)
+    implementation(libs.play.services.code.scanner)
+    implementation(libs.zxing.core)
+    implementation(libs.androidx.biometric)
     implementation(libs.kotlinx.coroutines.play.services)
 
     testImplementation(libs.junit)

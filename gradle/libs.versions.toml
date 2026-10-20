@@ -1,4 +1,7 @@
 [versions]
+zxing = "3.5.3"
+codeScanner = "16.1.0"
+biometric = "1.1.0"
 materialColor = "2.0.0"
 agp = "8.9.2"
 kotlin = "2.1.0"
@@ -22,6 +25,9 @@ androidxTestExtJunit = "1.2.1"
 androidxTestRunner = "1.6.2"
 
 [libraries]
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
+play-services-code-scanner = { group = "com.google.android.gms", name = "play-services-code-scanner", version.ref = "codeScanner" }
+androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }
 material-color-utilities = { group = "com.materialkolor", name = "material-color-utilities-android", version.ref = "materialColor" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-location-altitude = { group = "androidx.core", name = "core-location-altitude", version = "1.0.0" }

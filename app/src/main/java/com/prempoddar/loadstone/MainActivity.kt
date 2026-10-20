@@ -2,7 +2,6 @@ package com.prempoddar.loadstone
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -25,11 +24,27 @@ import com.prempoddar.loadstone.ui.theme.LoadstoneTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : androidx.fragment.app.FragmentActivity() {
+    /** Unlocked since the app last came to the front (only matters with app lock on). */
+    private val unlocked = androidx.compose.runtime.mutableStateOf(false)
+    private var leftAt = 0L
+
+    override fun onStop() {
+        super.onStop()
+        leftAt = android.os.SystemClock.elapsedRealtime()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // A quick trip out (the camera, a share sheet) doesn't lock; being away for a while does.
+        if (leftAt > 0 && android.os.SystemClock.elapsedRealtime() - leftAt > RELOCK_AFTER_MS) unlocked.value = false
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val imported = parseIncomingLink(intent)
+        val shortcutRoute = routeFor(intent)
 
         setContent {
             val appViewModel: AppViewModel = hiltViewModel()
@@ -52,6 +67,10 @@ class MainActivity : ComponentActivity() {
                     if (current != null) {
                         val start = if (current.onboardingComplete) Routes.HOME else Routes.ONBOARDING
                         LoadstoneNavHost(navController = navController, startDestination = start)
+                        // A home-screen shortcut: open its screen once, over the home screen.
+                        LaunchedEffect(shortcutRoute) {
+                            if (shortcutRoute != null && current.onboardingComplete) navController.navigate(shortcutRoute)
+                        }
 
                         pendingImport?.let { pending ->
                             SavePinSheet(
@@ -63,10 +82,27 @@ class MainActivity : ComponentActivity() {
                                 initialNote = pending.note.orEmpty(),
                             )
                         }
+                        if (current.appLock && !unlocked.value) {
+                            com.prempoddar.loadstone.ui.lock.LockScreen(this@MainActivity) { unlocked.value = true }
+                        }
                     }
                 }
             }
         }
+    }
+
+    /** Where a shortcut asks to go: dropping a pin, or finding one. */
+    private fun routeFor(intent: Intent?): String? = when (intent?.action) {
+        ACTION_DROP -> Routes.DROP
+        ACTION_FIND -> intent.getLongExtra(EXTRA_PIN, -1L).takeIf { it > 0 }?.let { Routes.navigate(it) }
+        else -> null
+    }
+
+    companion object {
+        const val ACTION_DROP = "com.prempoddar.loadstone.action.DROP"
+        const val ACTION_FIND = "com.prempoddar.loadstone.action.FIND"
+        const val EXTRA_PIN = "pin"
+        private const val RELOCK_AFTER_MS = 30_000L
     }
 
     /** Extracts an imported pin from a Loadstone App Link, if the app was opened by one. */

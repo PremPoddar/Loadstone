@@ -87,7 +87,14 @@ class HomeViewModel @Inject constructor(
     }
 
     fun delete(id: Long) {
-        viewModelScope.launch { pinRepository.delete(id) }
+        viewModelScope.launch {
+            // Its photos and voice notes go with it, rather than staying behind unseen.
+            pinRepository.get(id)?.let { pin ->
+                pin.photoPaths.forEach(com.prempoddar.loadstone.data.photo.PhotoStore::delete)
+                pin.voiceNotes.forEach(com.prempoddar.loadstone.data.voice.VoiceRecorder::delete)
+            }
+            pinRepository.delete(id)
+        }
     }
 
     fun updatePin(

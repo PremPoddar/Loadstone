@@ -1,5 +1,8 @@
 package com.prempoddar.loadstone.ui.home
 
+import com.prempoddar.loadstone.ui.components.QrDialog
+import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -91,12 +94,36 @@ fun HomeScreen(
     var editing by remember { mutableStateOf<Pin?>(null) }
     var viewingPhotosOf by remember { mutableStateOf<Pin?>(null) }
     var addingFromWords by remember { mutableStateOf(false) }
+    var showingQr by remember { mutableStateOf<Pin?>(null) }
+    // Scanning goes through Google Play services, so Loadstone itself needs no camera permission.
+    fun scanQr() {
+        val options = com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions.Builder()
+            .setBarcodeFormats(com.google.mlkit.vision.barcode.common.Barcode.FORMAT_QR_CODE).build()
+        com.google.mlkit.vision.codescanner.GmsBarcodeScanning.getClient(context, options).startScan()
+            .addOnSuccessListener { code ->
+                val shared = com.prempoddar.loadstone.share.QrCode.read(code.rawValue)
+                if (shared == null) {
+                    android.widget.Toast.makeText(context, "That code isn't a Loadstone pin", android.widget.Toast.LENGTH_SHORT).show()
+                } else {
+                    Haptics.confirm(view)
+                    val name = shared.name ?: "Shared pin"
+                    viewModel.addFromWords(shared.lat, shared.lon, name)
+                    android.widget.Toast.makeText(context, "Added $name", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+            .addOnFailureListener {
+                android.widget.Toast.makeText(context, "The scanner isn't available on this phone", android.widget.Toast.LENGTH_SHORT).show()
+            }
+    }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Loadstone", style = MaterialTheme.typography.titleLarge) },
                 actions = {
+                    IconButton(onClick = { Haptics.tap(view); scanQr() }) {
+                        Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan a pin's QR code")
+                    }
                     IconButton(onClick = { Haptics.tap(view); addingFromWords = true }) {
                         Icon(Icons.Filled.Abc, contentDescription = "Add from words")
                     }
@@ -137,6 +164,7 @@ fun HomeScreen(
                         onClick = { Haptics.tap(view); onOpenPin(item.pin.id) },
                         onOpenMaps = { Haptics.tap(view); openInMaps(context, item.pin) },
                         onShare = { Haptics.tap(view); sharePin(context, item.pin) },
+                        onShowQr = { Haptics.tap(view); showingQr = item.pin },
                         onEdit = { Haptics.tap(view); editing = item.pin },
                         onDelete = { pendingDelete = item.pin },
                         onOpenPhotos = { Haptics.tap(view); viewingPhotosOf = item.pin },
@@ -154,7 +182,7 @@ fun HomeScreen(
             text = { Text("\"${pin.name}\" will be removed. This can't be undone.") },
             confirmButton = {
                 TextButton(onClick = {
-                    Haptics.confirm(view); viewModel.delete(pin.id); pendingDelete = null
+                    Haptics.confirm(view); viewModel.delete(pin.id); com.prempoddar.loadstone.ui.util.PinShortcuts.removed(context, pin.id); pendingDelete = null
                 }) { Text("Delete") }
             },
             dismissButton = {
@@ -173,6 +201,8 @@ fun HomeScreen(
             },
         )
     }
+
+    showingQr?.let { QrDialog(it, onDismiss = { showingQr = null }) }
 
     viewingPhotosOf?.let { pin ->
         PhotoViewerDialog(
@@ -303,6 +333,7 @@ private fun PinRow(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onOpenPhotos: () -> Unit,
+    onShowQr: () -> Unit,
 ) {
     val unit = LocalUnitSystem.current
     var menuOpen by remember { mutableStateOf(false) }
@@ -370,6 +401,11 @@ private fun PinRow(
                         text = { Text("Share as words") },
                         leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
                         onClick = { menuOpen = false; onShare() },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Show QR code") },
+                        leadingIcon = { Icon(Icons.Filled.QrCode2, contentDescription = null) },
+                        onClick = { menuOpen = false; onShowQr() },
                     )
                     DropdownMenuItem(
                         text = { Text("Edit") },

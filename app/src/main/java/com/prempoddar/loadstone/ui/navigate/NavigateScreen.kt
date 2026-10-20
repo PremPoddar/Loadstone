@@ -87,6 +87,8 @@ fun NavigateScreen(
     LaunchedEffect(permission.hasPermission) {
         if (permission.hasPermission) viewModel.start()
     }
+    // Offer this pin as a shortcut on the app icon, as one of the recently opened.
+    LaunchedEffect(state.pin?.id) { state.pin?.let { com.prempoddar.loadstone.ui.util.PinShortcuts.opened(context, it) } }
     LaunchedEffect(state.arrived) {
         if (state.arrived && !wasArrived) Haptics.arrive(view)
         wasArrived = state.arrived
@@ -270,6 +272,11 @@ fun NavigateScreen(
                     onAdd = { Haptics.tap(view); addPhotos() },
                     onRemove = { path -> Haptics.tap(view); viewModel.removePhoto(path) },
                     onOpen = { path -> Haptics.tap(view); viewerIndex = pin.photoPaths.indexOf(path) },
+                )
+                Spacer(Modifier.height(12.dp))
+                com.prempoddar.loadstone.ui.components.VoiceNotesRow(
+                    pin.voiceNotes, onAdd = viewModel::addVoiceNote, onRemove = viewModel::removeVoiceNote,
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
 

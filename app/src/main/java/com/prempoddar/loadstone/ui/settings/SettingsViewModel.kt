@@ -28,6 +28,10 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.setAppearance(a) }
     }
 
+    fun setAppLock(on: Boolean) {
+        viewModelScope.launch { settingsRepository.setAppLock(on) }
+    }
+
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { settingsRepository.setThemeMode(mode) }
     }

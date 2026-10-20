@@ -23,6 +23,8 @@ data class Settings(
     val dynamicColor: Boolean = false,
     val accent: Int? = null,
     val pureBlack: Boolean = false,
+    /** Ask for fingerprint, face or the screen lock to open the app. */
+    val appLock: Boolean = false,
 ) {
     val appearance get() = com.prempoddar.loadstone.ui.design.Appearance(
         mode = when (themeMode) {
@@ -48,6 +50,7 @@ class SettingsRepository @Inject constructor(
         val DYNAMIC = booleanPreferencesKey("dynamic_color")
         val ACCENT = androidx.datastore.preferences.core.intPreferencesKey("accent")
         val BLACK = booleanPreferencesKey("pure_black")
+        val LOCK = booleanPreferencesKey("app_lock")
     }
 
     val settings: Flow<Settings> = context.dataStore.data.map { prefs ->
@@ -59,6 +62,7 @@ class SettingsRepository @Inject constructor(
             dynamicColor = prefs[Keys.DYNAMIC] ?: false,
             accent = prefs[Keys.ACCENT],
             pureBlack = prefs[Keys.BLACK] ?: false,
+            appLock = prefs[Keys.LOCK] ?: false,
         )
     }
 
@@ -85,6 +89,10 @@ class SettingsRepository @Inject constructor(
             p[Keys.BLACK] = a.pureBlack
             a.accent?.let { p[Keys.ACCENT] = it } ?: p.remove(Keys.ACCENT)
         }
+    }
+
+    suspend fun setAppLock(on: Boolean) {
+        context.dataStore.edit { it[Keys.LOCK] = on }
     }
 
     suspend fun setOnboardingComplete(complete: Boolean) {
