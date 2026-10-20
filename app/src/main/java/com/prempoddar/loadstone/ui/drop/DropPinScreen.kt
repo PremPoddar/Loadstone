@@ -174,11 +174,17 @@ fun DropPinScreen(
     // Open while a spot is locked in. That lives in the view model, so a configuration change
     // (the camera often rotates the screen) brings the sheet back on the same spot rather than
     // closing it and making the user lock in again from wherever they took the photo.
+    var recordWay by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
     if (state.lockedFix != null && !state.saving) {
         SavePinSheet(
             onDismiss = { viewModel.unlockSpot() },
+            onRecordChoice = { recordWay = it },
             onSave = { name, note, category, photoPaths ->
-                viewModel.savePin(name, note, category, photoPaths, onSaved)
+                viewModel.savePin(name, note, category, photoPaths) { id ->
+                    if (recordWay) com.prempoddar.loadstone.guide.GuideService.record(context, id)
+                    onSaved()
+                }
             },
         )
     }

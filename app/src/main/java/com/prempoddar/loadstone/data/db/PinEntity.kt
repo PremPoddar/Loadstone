@@ -19,6 +19,10 @@ data class PinEntity(
     // Newline-separated file paths (app-generated names never contain newlines).
     val photoPaths: String = "",
     val isPinned: Boolean = false,
+    /** The path walked away from the pin, "lat,lon;lat,lon", for retracing it. */
+    val trail: String = "",
+    // Newline-separated voice note files, like photoPaths.
+    val voiceNotes: String = "",
 )
 
 private fun encodePhotos(paths: List<String>) = paths.joinToString("\n")
@@ -36,6 +40,8 @@ fun PinEntity.toDomain() = Pin(
     photoPaths = decodePhotos(photoPaths),
     isPinned = isPinned,
     createdAt = createdAt,
+    trail = com.prempoddar.loadstone.core.geo.Trail.decode(trail),
+    voiceNotes = decodePhotos(voiceNotes),
 )
 
 fun Pin.toEntity() = PinEntity(
@@ -50,4 +56,6 @@ fun Pin.toEntity() = PinEntity(
     elevationMeters = elevationMeters,
     photoPaths = encodePhotos(photoPaths),
     isPinned = isPinned,
+    trail = com.prempoddar.loadstone.core.geo.Trail.encode(trail),
+    voiceNotes = encodePhotos(voiceNotes),
 )

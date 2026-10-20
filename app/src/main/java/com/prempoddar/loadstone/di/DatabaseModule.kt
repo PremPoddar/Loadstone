@@ -18,7 +18,7 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): LoadstoneDatabase =
         Room.databaseBuilder(context, LoadstoneDatabase::class.java, "loadstone.db")
-            .addMigrations(LoadstoneDatabase.MIGRATION_1_2, LoadstoneDatabase.MIGRATION_2_3)
+            .addMigrations(LoadstoneDatabase.MIGRATION_1_2, LoadstoneDatabase.MIGRATION_2_3, LoadstoneDatabase.MIGRATION_3_4)
             .build()
 
     @Provides

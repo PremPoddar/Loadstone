@@ -14,4 +14,8 @@ data class Pin(
     /** Kept at the top of the list regardless of how far away it is. */
     val isPinned: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
+    /** The path walked away from here, from the pin outward; empty if none was recorded. */
+    val trail: List<com.prempoddar.loadstone.core.geo.TrailPoint> = emptyList(),
+    /** Recorded voice notes, as files in the app's storage. */
+    val voiceNotes: List<String> = emptyList(),
 )

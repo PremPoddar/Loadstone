@@ -58,6 +58,12 @@ data class NavigateUiState(
     val refined: Boolean = false,
     /** Where you are standing now, above sea level; steadied by the barometer when there is one. */
     val elevationMeters: Double? = null,
+    /** Following the recorded path back rather than the straight line. */
+    val retracing: Boolean = false,
+    /** How far you have strayed from the path while retracing it. */
+    val offTrailMeters: Double? = null,
+    /** Where you are, for drawing yourself on the path. */
+    val here: com.prempoddar.loadstone.core.geo.TrailPoint? = null,
 )
 
 /** The parts of a position estimate that navigation needs, kept free of android.location for tests. */
@@ -81,6 +87,7 @@ internal fun navigateState(
     compassAccuracyClass: Int?,
     compassAvailable: Boolean,
     refined: Boolean = false,
+    retrace: Boolean = false,
 ): NavigateUiState {
     val currentAccuracy = fix?.accuracyMeters
     // A Wi-Fi or cell fix can be hundreds of meters out. Showing a distance derived from one reads
@@ -95,11 +102,17 @@ internal fun navigateState(
         compassAvailable = compassAvailable,
         waitingForFix = !usable,
         refined = refined,
+        here = fix?.let { com.prempoddar.loadstone.core.geo.TrailPoint(it.latitude, it.longitude) },
     )
     if (pin == null || fix == null || currentAccuracy == null || !usable) return base
 
-    val bearing = GeoMath.initialBearingDegrees(fix.latitude, fix.longitude, pin.latitude, pin.longitude)
-    val distance = GeoMath.distanceMeters(fix.latitude, fix.longitude, pin.latitude, pin.longitude)
+    val straight = GeoMath.distanceMeters(fix.latitude, fix.longitude, pin.latitude, pin.longitude)
+    // Retracing: aim a little way along the recorded path and count the distance along it.
+    val path = if (retrace) com.prempoddar.loadstone.core.geo.Trail.guide(pin.trail, fix.latitude, fix.longitude) else null
+    val aim = path?.target
+    val bearing = if (aim != null) GeoMath.initialBearingDegrees(fix.latitude, fix.longitude, aim.latitude, aim.longitude)
+    else GeoMath.initialBearingDegrees(fix.latitude, fix.longitude, pin.latitude, pin.longitude)
+    val distance = path?.remainingMeters ?: straight
 
     // Errors in the pin and in where you are standing now are independent, so they combine in
     // quadrature rather than adding. This single number is what the whole screen should be honest
@@ -111,10 +124,10 @@ internal fun navigateState(
     // Within the uncertainty the bearing is noise. Pointing anyway is what made the arrow spin as
     // you got close: a 5 m error seen from 4 m away swings the direction through tens of degrees
     // between fixes. Better to say "it's around here" than to point confidently at nothing.
-    val directionMeaningful = distance > max(uncertainty, NavigateViewModel.MIN_BEARING_DISTANCE)
+    val directionMeaningful = straight > max(uncertainty, NavigateViewModel.MIN_BEARING_DISTANCE)
 
     val trustworthy = currentAccuracy <= NavigateViewModel.ARRIVE_MAX_ACCURACY
-    val arrived = trustworthy && distance <= max(uncertainty, NavigateViewModel.MIN_ARRIVE_RADIUS)
+    val arrived = trustworthy && straight <= max(uncertainty, NavigateViewModel.MIN_ARRIVE_RADIUS)
 
     val observation = PinRefinement.Observation(fix.latitude, fix.longitude, currentAccuracy.toDouble())
     val stored = PinRefinement.Observation(pin.latitude, pin.longitude, pin.accuracyMeters.toDouble())
@@ -130,6 +143,8 @@ internal fun navigateState(
         arrived = arrived,
         searchHere = !directionMeaningful,
         canRefine = !refined && fix.settled && PinRefinement.worthMerging(stored, observation),
+        retracing = path != null,
+        offTrailMeters = path?.offTrailMeters,
     )
 }
 
@@ -156,6 +171,13 @@ class NavigateViewModel @Inject constructor(
     // bearing — which is what the jittering arrow actually was.
     private val fix = MutableStateFlow<PinFix?>(null)
     private val refined = MutableStateFlow(false)
+    private val retrace = MutableStateFlow(false)
+
+    /** Follow the recorded path back instead of the straight line. */
+    fun setRetrace(on: Boolean) { retrace.value = on }
+
+    /** Reloads the pin, for when the recording service has added to its path. */
+    fun reloadPin() { viewModelScope.launch { pinRepository.get(pinId)?.let { pin.value = it } } }
     private var started = false
 
     private val compassAvailable = compass.hasCompass()
@@ -193,8 +215,8 @@ class NavigateViewModel @Inject constructor(
     private var lastCorrected: PinFix? = null
 
     val uiState: StateFlow<NavigateUiState> =
-        combine(combine(pin, fix, heading, refined) { p, f, h, r -> NavInputs(p, f, h, r) }, liveElevation) { inputs, elev ->
-            val (p, f, head, didRefine) = inputs
+        combine(combine(pin, fix, heading, refined, retrace) { p, f, h, r, t -> NavInputs(p, f, h, r, t) }, liveElevation) { inputs, elev ->
+            val (p, f, head, didRefine, following) = inputs
             val compassTrue = if (head != null && f != null) {
                 GeoMath.normalize360(head.magneticDegrees + declinationAt(f).toDouble())
             } else {
@@ -211,6 +233,7 @@ class NavigateViewModel @Inject constructor(
                 compassAccuracyClass = head?.accuracyClass,
                 compassAvailable = compassAvailable,
                 refined = didRefine,
+                retrace = following,
             ).copy(elevationMeters = elev)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), NavigateUiState())
 
@@ -292,4 +315,4 @@ class NavigateViewModel @Inject constructor(
     }
 }
 
-private data class NavInputs(val pin: Pin?, val fix: PinFix?, val heading: Heading?, val refined: Boolean)
+private data class NavInputs(val pin: Pin?, val fix: PinFix?, val heading: Heading?, val refined: Boolean, val retrace: Boolean)

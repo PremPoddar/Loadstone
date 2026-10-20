@@ -3,6 +3,16 @@ package com.prempoddar.loadstone.ui.navigate
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.Route
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -97,6 +107,7 @@ fun NavigateScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .safeDrawingPadding()
+                .verticalScroll(androidx.compose.foundation.rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 16.dp),
         ) {
             if (arcHintVisible) {
@@ -128,7 +139,7 @@ fun NavigateScreen(
 
             // Arrow.
             Box(
-                modifier = Modifier.fillMaxWidth().weight(1f),
+                modifier = Modifier.fillMaxWidth().height(310.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 CompassArrow(
@@ -242,6 +253,11 @@ fun NavigateScreen(
                         color = MaterialTheme.colorScheme.outline,
                     )
                 }
+            }
+
+            if (pin != null) {
+                Spacer(Modifier.height(16.dp))
+                WaysBack(pin, state, onRetrace = viewModel::setRetrace, onReload = viewModel::reloadPin)
             }
 
             // Photos of this place — tap to view full screen, or add another.
@@ -368,5 +384,107 @@ private fun PermissionGate(onGrant: () -> Unit, onBack: () -> Unit) {
         Spacer(Modifier.height(16.dp))
         TextButton(onClick = onGrant) { Text("Grant location access") }
         TextButton(onClick = onBack) { Text("Back") }
+    }
+}
+
+/**
+ * How to get back: straight at the pin or along the recorded path (drawn, with you on it), and the
+ * screen-off helpers: guiding by notification, and recording the way you walk from here.
+ */
+@Composable
+private fun WaysBack(
+    pin: com.prempoddar.loadstone.data.pin.Pin,
+    state: NavigateUiState,
+    onRetrace: (Boolean) -> Unit,
+    onReload: () -> Unit,
+) {
+    val context = LocalContext.current
+    val unit = LocalUnitSystem.current
+    val active by com.prempoddar.loadstone.guide.GuideService.active.collectAsState()
+    val mine = active?.takeIf { it.pinId == pin.id }
+    // A finished recording changes the pin's path: show it as soon as it's saved.
+    LaunchedEffect(mine?.recording) { if (mine?.recording != true) { kotlinx.coroutines.delay(600); onReload() } }
+    var pending by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val askNotify = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { pending?.invoke(); pending = null }
+    // The notification is how these work with the screen off, so ask to show it first (Android 13+).
+    fun withNotifications(go: () -> Unit) {
+        if (android.os.Build.VERSION.SDK_INT >= 33 &&
+            androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) { pending = go; askNotify.launch(android.Manifest.permission.POST_NOTIFICATIONS) } else go()
+    }
+
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        if (pin.trail.size >= 2) {
+            val length = com.prempoddar.loadstone.core.geo.Trail.length(pin.trail)
+            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                SegmentedButton(selected = !state.retracing, onClick = { onRetrace(false) }, shape = SegmentedButtonDefaults.itemShape(0, 2)) { Text("Straight line") }
+                SegmentedButton(selected = state.retracing, onClick = { onRetrace(true) }, shape = SegmentedButtonDefaults.itemShape(1, 2)) {
+                    Text("My path · ${UnitFormatter.formatDistance(length, unit)}")
+                }
+            }
+            if (state.retracing) {
+                PathPicture(pin, state.here, Modifier.fillMaxWidth().height(150.dp))
+                state.offTrailMeters?.takeIf { it > com.prempoddar.loadstone.core.geo.Trail.STRAYED_METERS }?.let {
+                    Text(
+                        "You're ${UnitFormatter.formatDistance(it, unit)} off your path — the arrow leads back to it.",
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (mine?.guiding == true) {
+                FilledTonalButton(onClick = { com.prempoddar.loadstone.guide.GuideService.stop(context) }, modifier = Modifier.weight(1f)) { Text("Stop guiding") }
+            } else {
+                FilledTonalButton(
+                    onClick = { withNotifications { com.prempoddar.loadstone.guide.GuideService.guide(context, pin.id) } },
+                    modifier = Modifier.weight(1f),
+                ) { Icon(Icons.Filled.Notifications, null, Modifier.size(18.dp)); Text("  Screen off", maxLines = 1) }
+            }
+            if (mine?.recording == true) {
+                FilledTonalButton(onClick = { com.prempoddar.loadstone.guide.GuideService.stop(context) }, modifier = Modifier.weight(1f)) { Text("Stop recording") }
+            } else {
+                OutlinedButton(
+                    onClick = { withNotifications { com.prempoddar.loadstone.guide.GuideService.record(context, pin.id) } },
+                    modifier = Modifier.weight(1f),
+                ) { Icon(Icons.Filled.Route, null, Modifier.size(18.dp)); Text(if (pin.trail.size >= 2) "  Record again" else "  Record my way", maxLines = 1) }
+            }
+        }
+        Text(
+            when {
+                mine?.recording == true -> "Recording the way you walk from here. Turn the screen off; stop when you've arrived where you're going."
+                mine?.guiding == true -> "Guiding from the notification: turn the screen off and it buzzes when you're there."
+                else -> "Screen off: distance and direction in a notification, with a buzz on arrival. Record my way: save your route from here to retrace it later."
+            },
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline,
+        )
+    }
+}
+
+/** The recorded path from the pin, with the pin and you marked, fitted to the box with north up. */
+@Composable
+private fun PathPicture(pin: com.prempoddar.loadstone.data.pin.Pin, here: com.prempoddar.loadstone.core.geo.TrailPoint?, modifier: Modifier) {
+    val line = MaterialTheme.colorScheme.primary
+    val pinColor = MaterialTheme.colorScheme.tertiary
+    val youColor = MaterialTheme.colorScheme.onSurface
+    val bg = MaterialTheme.colorScheme.surfaceContainerHigh
+    androidx.compose.foundation.Canvas(modifier.clip(MaterialTheme.shapes.large).background(bg)) {
+        val points = pin.trail + listOfNotNull(here)
+        val lat0 = points.minOf { it.latitude }; val lat1 = points.maxOf { it.latitude }
+        val lon0 = points.minOf { it.longitude }; val lon1 = points.maxOf { it.longitude }
+        val k = kotlin.math.cos(Math.toRadians((lat0 + lat1) / 2))
+        val spanX = ((lon1 - lon0) * k).coerceAtLeast(1e-6); val spanY = (lat1 - lat0).coerceAtLeast(1e-6)
+        val pad = 16.dp.toPx()
+        val scale = minOf((size.width - 2 * pad) / spanX, (size.height - 2 * pad) / spanY).toFloat()
+        val ox = (size.width - (spanX * scale).toFloat()) / 2; val oy = (size.height - (spanY * scale).toFloat()) / 2
+        fun at(p: com.prempoddar.loadstone.core.geo.TrailPoint) =
+            Offset(ox + ((p.longitude - lon0) * k * scale).toFloat(), size.height - oy - ((p.latitude - lat0) * scale).toFloat())
+        val path = androidx.compose.ui.graphics.Path().apply {
+            val first = at(pin.trail.first()); moveTo(first.x, first.y)
+            pin.trail.drop(1).forEach { val o = at(it); lineTo(o.x, o.y) }
+        }
+        drawPath(path, line, style = androidx.compose.ui.graphics.drawscope.Stroke(4.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+        drawCircle(pinColor, 7.dp.toPx(), at(pin.trail.first()))
+        here?.let { drawCircle(youColor, 6.dp.toPx(), at(it)); drawCircle(bg, 3.dp.toPx(), at(it)) }
     }
 }

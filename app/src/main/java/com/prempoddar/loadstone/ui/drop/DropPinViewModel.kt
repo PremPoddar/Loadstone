@@ -102,7 +102,7 @@ class DropPinViewModel @Inject constructor(
         note: String?,
         category: PinCategory,
         photoPaths: List<String>,
-        onSaved: () -> Unit,
+        onSaved: (Long) -> Unit,
     ) {
         val pin = _state.value.pinToSave(name, note, category, photoPaths) ?: return
         val spot = _state.value.lockedFix ?: return
@@ -111,7 +111,7 @@ class DropPinViewModel @Inject constructor(
             val id = pinRepository.upsert(pin)
             // Keep sharpening while the person is still standing there.
             polisher.polish(id, spot)
-            onSaved()
+            onSaved(id)
         }
     }
 

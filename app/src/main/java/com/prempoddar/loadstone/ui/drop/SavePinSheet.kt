@@ -1,5 +1,8 @@
 package com.prempoddar.loadstone.ui.drop
 
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.Switch
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -47,6 +50,8 @@ fun SavePinSheet(
     initialPhotos: List<String> = emptyList(),
     title: String = "Save this spot",
     saveLabel: String = "Save pin",
+    /** When set, offers to record the way walked from here, and reports the choice. */
+    onRecordChoice: ((Boolean) -> Unit)? = null,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
@@ -103,6 +108,17 @@ fun SavePinSheet(
                         label = { Text(v.label) },
                         leadingIcon = { Icon(v.icons.first(), contentDescription = null) },
                     )
+                }
+            }
+
+            if (onRecordChoice != null) {
+                var record by remember { mutableStateOf(false) }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Record my way from here", style = MaterialTheme.typography.bodyLarge)
+                        Text("Retrace your exact route back later", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Switch(checked = record, onCheckedChange = { record = it; onRecordChoice(it) })
                 }
             }
 
