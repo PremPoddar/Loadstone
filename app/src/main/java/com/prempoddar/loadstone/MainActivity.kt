@@ -51,6 +51,7 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
             val settings by appViewModel.settings.collectAsState()
             val pendingImport by appViewModel.pendingImport.collectAsState()
             val current: Settings? = settings
+            com.prempoddar.loadstone.data.location.FixLog.enabled = current?.accuracyLog == true
 
             LaunchedEffect(imported) {
                 imported?.let { appViewModel.onImport(it) }

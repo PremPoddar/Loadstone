@@ -7,7 +7,7 @@ import java.io.File
 
 /** Creates app-scoped image files and content URIs for the camera. No permission needed. */
 object PhotoStore {
-    private fun dir(context: Context): File =
+    fun dir(context: Context): File =
         File(context.getExternalFilesDir(null), "pin_photos").apply { mkdirs() }
 
     /** A fresh, empty JPEG file the camera can write into. */

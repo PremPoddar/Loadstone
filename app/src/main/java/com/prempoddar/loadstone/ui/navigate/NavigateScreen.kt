@@ -90,7 +90,7 @@ fun NavigateScreen(
     // Offer this pin as a shortcut on the app icon, as one of the recently opened.
     LaunchedEffect(state.pin?.id) { state.pin?.let { com.prempoddar.loadstone.ui.util.PinShortcuts.opened(context, it) } }
     LaunchedEffect(state.arrived) {
-        if (state.arrived && !wasArrived) Haptics.arrive(view)
+        if (state.arrived && !wasArrived) { Haptics.arrive(view); com.prempoddar.loadstone.data.location.FixLog.mark(context, "arrived pin ${state.pin?.id}") }
         wasArrived = state.arrived
     }
     DisposableEffect(Unit) {

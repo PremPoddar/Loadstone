@@ -25,6 +25,8 @@ data class Settings(
     val pureBlack: Boolean = false,
     /** Ask for fingerprint, face or the screen lock to open the app. */
     val appLock: Boolean = false,
+    /** Recording every fix to a file, for accuracy testing. */
+    val accuracyLog: Boolean = false,
 ) {
     val appearance get() = com.prempoddar.loadstone.ui.design.Appearance(
         mode = when (themeMode) {
@@ -51,6 +53,7 @@ class SettingsRepository @Inject constructor(
         val ACCENT = androidx.datastore.preferences.core.intPreferencesKey("accent")
         val BLACK = booleanPreferencesKey("pure_black")
         val LOCK = booleanPreferencesKey("app_lock")
+        val LOG = booleanPreferencesKey("accuracy_log")
     }
 
     val settings: Flow<Settings> = context.dataStore.data.map { prefs ->
@@ -63,6 +66,7 @@ class SettingsRepository @Inject constructor(
             accent = prefs[Keys.ACCENT],
             pureBlack = prefs[Keys.BLACK] ?: false,
             appLock = prefs[Keys.LOCK] ?: false,
+            accuracyLog = prefs[Keys.LOG] ?: false,
         )
     }
 
@@ -89,6 +93,10 @@ class SettingsRepository @Inject constructor(
             p[Keys.BLACK] = a.pureBlack
             a.accent?.let { p[Keys.ACCENT] = it } ?: p.remove(Keys.ACCENT)
         }
+    }
+
+    suspend fun setAccuracyLog(on: Boolean) {
+        context.dataStore.edit { it[Keys.LOG] = on }
     }
 
     suspend fun setAppLock(on: Boolean) {

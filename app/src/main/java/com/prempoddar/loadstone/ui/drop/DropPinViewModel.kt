@@ -60,6 +60,7 @@ class DropPinViewModel @Inject constructor(
     private val locationRepository: LocationRepository,
     private val pinRepository: PinRepository,
     private val polisher: com.prempoddar.loadstone.data.pin.PinPolisher,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DropUiState())
@@ -109,6 +110,7 @@ class DropPinViewModel @Inject constructor(
         _state.value = _state.value.copy(saving = true)
         viewModelScope.launch {
             val id = pinRepository.upsert(pin)
+            com.prempoddar.loadstone.data.location.FixLog.mark(context, "saved pin $id")
             // Keep sharpening while the person is still standing there.
             polisher.polish(id, spot)
             onSaved(id)

@@ -14,6 +14,8 @@ class PinRepository @Inject constructor(private val dao: PinDao) {
 
     suspend fun get(id: Long): Pin? = dao.get(id)?.toDomain()
 
+    suspend fun all(): List<Pin> = dao.all().map { it.toDomain() }
+
     suspend fun upsert(pin: Pin): Long = dao.upsert(pin.toEntity())
 
     suspend fun delete(id: Long) = dao.deleteById(id)

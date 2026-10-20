@@ -10,6 +10,9 @@ interface PinDao {
     @Query("SELECT * FROM pins ORDER BY isPinned DESC, createdAt DESC")
     fun observeAll(): Flow<List<PinEntity>>
 
+    @Query("SELECT * FROM pins ORDER BY createdAt")
+    suspend fun all(): List<PinEntity>
+
     @Query("SELECT * FROM pins WHERE id = :id")
     suspend fun get(id: Long): PinEntity?
 

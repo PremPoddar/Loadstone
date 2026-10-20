@@ -53,8 +53,13 @@ class LocationRepository @Inject constructor(
 
         fun ingest(loc: Location) {
             if (!loc.hasAccuracy()) return
-            estimator.add(loc.toRawFix(altitudeCorrector.mslAltitudeMeters(loc)))
-            estimator.current()?.let { trySend(it) }
+            val raw = loc.toRawFix(altitudeCorrector.mslAltitudeMeters(loc))
+            if (FixLog.enabled) FixLog.raw(context, raw.elapsedRealtimeMs, raw.latitude, raw.longitude, raw.accuracyMeters, raw.speedMps, raw.altitudeMeters)
+            estimator.add(raw)
+            estimator.current()?.let {
+                if (FixLog.enabled) FixLog.estimate(context, raw.elapsedRealtimeMs, it)
+                trySend(it)
+            }
         }
 
         // Warm start — but only from a genuinely recent fix, never a days-old cached one, which
