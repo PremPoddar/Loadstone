@@ -26,6 +26,7 @@ data class DropUiState(
      */
     val lockedFix: PinFix? = null,
     val satellites: com.prempoddar.loadstone.data.location.LocationRepository.Satellites? = null,
+    val folders: List<String> = emptyList(),
 ) {
     /**
      * A pin is only worth saving once the estimate is tight enough to walk back to. Saving a
@@ -40,7 +41,7 @@ data class DropUiState(
     fun lock(): DropUiState? = if (canSave) copy(lockedFix = fix) else null
 
     /** The pin to store, always at [lockedFix]; null if no spot has been locked in. */
-    fun pinToSave(name: String, note: String?, category: PinCategory, photoPaths: List<String>): Pin? {
+    fun pinToSave(name: String, note: String?, category: PinCategory, photoPaths: List<String>, folder: String? = null): Pin? {
         val spot = lockedFix ?: return null
         return Pin(
             name = name.trim().ifBlank { "Pin" },
@@ -51,6 +52,7 @@ data class DropUiState(
             category = category,
             elevationMeters = spot.altitudeMeters,
             photoPaths = photoPaths,
+            folder = folder,
         )
     }
 }
@@ -72,6 +74,10 @@ class DropPinViewModel @Inject constructor(
     fun startMeasuring() {
         if (started) return
         started = true
+        viewModelScope.launch {
+            val folders = pinRepository.all().mapNotNull { it.folder }.distinct().sorted()
+            _state.value = _state.value.copy(folders = folders)
+        }
         viewModelScope.launch {
             locationRepository.satellites().catch { }.collect { _state.value = _state.value.copy(satellites = it) }
         }
@@ -103,9 +109,10 @@ class DropPinViewModel @Inject constructor(
         note: String?,
         category: PinCategory,
         photoPaths: List<String>,
+        folder: String?,
         onSaved: (Long) -> Unit,
     ) {
-        val pin = _state.value.pinToSave(name, note, category, photoPaths) ?: return
+        val pin = _state.value.pinToSave(name, note, category, photoPaths, folder) ?: return
         val spot = _state.value.lockedFix ?: return
         _state.value = _state.value.copy(saving = true)
         viewModelScope.launch {

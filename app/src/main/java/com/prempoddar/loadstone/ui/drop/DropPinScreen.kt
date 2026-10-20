@@ -180,8 +180,9 @@ fun DropPinScreen(
         SavePinSheet(
             onDismiss = { viewModel.unlockSpot() },
             onRecordChoice = { recordWay = it },
-            onSave = { name, note, category, photoPaths ->
-                viewModel.savePin(name, note, category, photoPaths) { id ->
+            folders = state.folders,
+            onSave = { name, note, category, photoPaths, folder ->
+                viewModel.savePin(name, note, category, photoPaths, folder) { id ->
                     if (recordWay) com.prempoddar.loadstone.guide.GuideService.record(context, id)
                     onSaved()
                 }

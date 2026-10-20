@@ -31,6 +31,7 @@ object PinFiles {
                 put("category", p.category.name); put("elevation", p.elevationMeters ?: JSONObject.NULL)
                 put("pinned", p.isPinned); put("created", p.createdAt)
                 put("trail", Trail.encode(p.trail))
+                put("folder", p.folder ?: JSONObject.NULL)
                 put("photos", JSONArray(p.photoPaths.map { java.io.File(it).name }))
                 put("voice", JSONArray(p.voiceNotes.map { java.io.File(it).name }))
             }
@@ -51,6 +52,7 @@ object PinFiles {
                 elevationMeters = if (o.isNull("elevation")) null else o.optDouble("elevation"),
                 isPinned = o.optBoolean("pinned"), createdAt = o.optLong("created", System.currentTimeMillis()),
                 trail = Trail.decode(o.optString("trail")),
+                folder = if (o.isNull("folder")) null else o.optString("folder").ifBlank { null },
                 photoPaths = o.optJSONArray("photos").strings(), voiceNotes = o.optJSONArray("voice").strings(),
             )
         }

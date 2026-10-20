@@ -76,8 +76,8 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
                         pendingImport?.let { pending ->
                             SavePinSheet(
                                 onDismiss = { appViewModel.clearImport() },
-                                onSave = { name, note, category, photoPaths ->
-                                    appViewModel.saveImported(name, note, category, photoPaths)
+                                onSave = { name, note, category, photoPaths, folder ->
+                                    appViewModel.saveImported(name, note, category, photoPaths, folder)
                                 },
                                 initialName = pending.name.orEmpty(),
                                 initialNote = pending.note.orEmpty(),

@@ -43,11 +43,14 @@ import java.io.File
 @Composable
 fun SavePinSheet(
     onDismiss: () -> Unit,
-    onSave: (name: String, note: String?, category: PinCategory, photoPaths: List<String>) -> Unit,
+    onSave: (name: String, note: String?, category: PinCategory, photoPaths: List<String>, folder: String?) -> Unit,
     initialName: String = "",
     initialNote: String = "",
     initialCategory: PinCategory = PinCategory.PIN,
     initialPhotos: List<String> = emptyList(),
+    initialFolder: String? = null,
+    /** Folders already in use, offered as one-tap choices. */
+    folders: List<String> = emptyList(),
     title: String = "Save this spot",
     saveLabel: String = "Save pin",
     /** When set, offers to record the way walked from here, and reports the choice. */
@@ -60,6 +63,7 @@ fun SavePinSheet(
     var note by remember { mutableStateOf(initialNote) }
     var category by remember { mutableStateOf(initialCategory) }
     var photos by remember { mutableStateOf(initialPhotos) }
+    var folder by remember { mutableStateOf(initialFolder.orEmpty()) }
     val addPhotos = com.prempoddar.loadstone.ui.components.rememberPhotoAdder { added -> photos = photos + added }
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
@@ -98,6 +102,18 @@ fun SavePinSheet(
                 },
             )
 
+            Text("Folder", style = MaterialTheme.typography.labelLarge)
+            OutlinedTextField(
+                value = folder, onValueChange = { folder = it.take(40) },
+                placeholder = { Text("None — or type one, like Trip to Goa") },
+                singleLine = true, modifier = Modifier.fillMaxWidth(),
+            )
+            if (folders.isNotEmpty()) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    folders.forEach { f -> FilterChip(selected = folder == f, onClick = { folder = if (folder == f) "" else f }, label = { Text(f) }) }
+                }
+            }
+
             Text("Category", style = MaterialTheme.typography.labelLarge)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 PinCategory.entries.forEach { cat ->
@@ -123,7 +139,7 @@ fun SavePinSheet(
             }
 
             Button(
-                onClick = { Haptics.confirm(view); onSave(name, note, category, photos) },
+                onClick = { Haptics.confirm(view); onSave(name, note, category, photos, folder.trim().ifBlank { null }) },
                 enabled = name.isNotBlank(),
                 modifier = Modifier
                     .fillMaxWidth()

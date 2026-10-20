@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class PinListItem(val pin: Pin, val distanceMeters: Double?)
-data class HomeUiState(val items: List<PinListItem> = emptyList(), val hasLocation: Boolean = false)
+data class HomeUiState(val items: List<PinListItem> = emptyList(), val hasLocation: Boolean = false, val here: Pair<Double, Double>? = null)
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -45,7 +45,7 @@ class HomeViewModel @Inject constructor(
                     compareByDescending<PinListItem> { it.pin.isPinned }
                         .thenBy(nullsLast()) { it.distanceMeters },
                 )
-            HomeUiState(items = items, hasLocation = loc != null)
+            HomeUiState(items = items, hasLocation = loc != null, here = loc?.let { it.latitude to it.longitude })
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HomeUiState())
 
     /** Called once the user has granted location permission. */
@@ -103,10 +103,12 @@ class HomeViewModel @Inject constructor(
         note: String?,
         category: PinCategory,
         photoPaths: List<String>,
+        folder: String? = original.folder,
     ) {
         viewModelScope.launch {
             pinRepository.upsert(
                 original.copy(
+                    folder = folder,
                     name = name.trim().ifBlank { original.name },
                     note = note?.trim()?.ifBlank { null },
                     category = category,

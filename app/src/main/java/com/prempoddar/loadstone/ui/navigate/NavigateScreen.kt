@@ -237,6 +237,21 @@ fun NavigateScreen(
                         color = MaterialTheme.colorScheme.primary,
                     )
                 }
+                // Daylight: say so when the walk back would end after dark.
+                val here0 = state.here
+                val left = state.distanceMeters
+                if (here0 != null && left != null && !state.arrived) {
+                    val warning = remember((left / 100).toInt(), System.currentTimeMillis() / 60_000) {
+                        com.prempoddar.loadstone.core.geo.Sun.warning(here0.latitude, here0.longitude, left, System.currentTimeMillis())
+                    }
+                    warning?.let { (light, walk) ->
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            if (light <= 0) "The sun is setting now · about $walk min to walk back" else "Sunset in $light min · about $walk min to walk back",
+                            style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
                 // Where you are and where the pin is, so a climb or a descent ahead is no surprise.
                 val here = state.elevationMeters
                 val there = pin?.elevationMeters

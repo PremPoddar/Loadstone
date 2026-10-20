@@ -18,4 +18,6 @@ data class Pin(
     val trail: List<com.prempoddar.loadstone.core.geo.TrailPoint> = emptyList(),
     /** Recorded voice notes, as files in the app's storage. */
     val voiceNotes: List<String> = emptyList(),
+    /** A folder the person filed it in ("Trip to Goa", "Parking"), or none. */
+    val folder: String? = null,
 )

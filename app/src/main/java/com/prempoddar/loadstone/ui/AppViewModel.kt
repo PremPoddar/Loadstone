@@ -43,7 +43,7 @@ class AppViewModel @Inject constructor(
         _pendingImport.value = null
     }
 
-    fun saveImported(name: String, note: String?, category: PinCategory, photoPaths: List<String>) {
+    fun saveImported(name: String, note: String?, category: PinCategory, photoPaths: List<String>, folder: String? = null) {
         val pending = _pendingImport.value ?: return
         val lat = pending.lat
         val lon = pending.lon
@@ -54,9 +54,12 @@ class AppViewModel @Inject constructor(
                     note = note?.trim()?.ifBlank { null },
                     latitude = lat,
                     longitude = lon,
-                    accuracyMeters = 0f,
+                    // A shared link says nothing about how well the sender measured it: start
+                    // modest, as a pin shared in words does, and let the first visit sharpen it.
+                    accuracyMeters = com.prempoddar.loadstone.ui.home.HomeViewModel.SHARED_ACCURACY_METERS,
                     category = category,
                     photoPaths = photoPaths,
+                    folder = folder,
                 ),
             )
             _pendingImport.value = null

@@ -1,5 +1,6 @@
 package com.prempoddar.loadstone.ui.home
 
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Radar
 import com.prempoddar.loadstone.ui.components.QrDialog
 import androidx.compose.material.icons.filled.QrCodeScanner
@@ -97,6 +98,13 @@ fun HomeScreen(
     var viewingPhotosOf by remember { mutableStateOf<Pin?>(null) }
     var addingFromWords by remember { mutableStateOf(false) }
     var showingQr by remember { mutableStateOf<Pin?>(null) }
+    // The home-screen widget shows the pinned spot, or the newest, from here.
+    val unitNow = com.prempoddar.loadstone.ui.LocalUnitSystem.current
+    LaunchedEffect(state.items, state.here?.let { (it.first * 2000).toInt() to (it.second * 2000).toInt() }) {
+        val top = state.items.firstOrNull { it.pin.isPinned }?.pin ?: state.items.maxByOrNull { it.pin.createdAt }?.pin
+        com.prempoddar.loadstone.widget.PinWidget.update(context, top, state.here, unitNow)
+    }
+    var folderFilter by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf<String?>(null) }
     // Scanning goes through Google Play services, so Loadstone itself needs no camera permission.
     fun scanQr() {
         val options = com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions.Builder()
@@ -146,6 +154,9 @@ fun HomeScreen(
             )
         },
     ) { padding ->
+        val folders = remember(state.items) { state.items.mapNotNull { it.pin.folder }.distinct().sorted() }
+        if (folderFilter != null && folderFilter !in folders) folderFilter = null
+        val shown = if (folderFilter == null) state.items else state.items.filter { it.pin.folder == folderFilter }
         if (state.items.isEmpty()) {
             EmptyState(modifier = Modifier.padding(padding))
         } else {
@@ -155,7 +166,19 @@ fun HomeScreen(
                     .padding(padding),
                 contentPadding = PaddingValues(vertical = 8.dp, horizontal = 12.dp),
             ) {
-                items(state.items, key = { it.pin.id }) { item ->
+                // Folders, when any are in use: tap one to see just its pins.
+                if (folders.isNotEmpty()) item(key = "folders") {
+                    androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 4.dp)) {
+                        item { androidx.compose.material3.FilterChip(selected = folderFilter == null, onClick = { folderFilter = null }, label = { Text("All") }) }
+                        items(folders) { f ->
+                            androidx.compose.material3.FilterChip(
+                                selected = folderFilter == f, onClick = { folderFilter = if (folderFilter == f) null else f },
+                                label = { Text(f) }, leadingIcon = { Icon(Icons.Filled.Folder, null, Modifier.size(18.dp)) },
+                            )
+                        }
+                    }
+                }
+                items(shown, key = { it.pin.id }) { item ->
                     SwipeablePinRow(
                         pin = item.pin,
                         onSetPinned = { pinned ->
@@ -219,8 +242,10 @@ fun HomeScreen(
     editing?.let { pin ->
         SavePinSheet(
             onDismiss = { editing = null },
-            onSave = { name, note, category, photos ->
-                viewModel.updatePin(pin, name, note, category, photos)
+            initialFolder = pin.folder,
+            folders = state.items.mapNotNull { it.pin.folder }.distinct().sorted(),
+            onSave = { name, note, category, photos, folder ->
+                viewModel.updatePin(pin, name, note, category, photos, folder)
                 editing = null
             },
             initialName = pin.name,
