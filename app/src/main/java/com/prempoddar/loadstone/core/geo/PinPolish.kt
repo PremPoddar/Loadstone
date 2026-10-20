@@ -23,6 +23,9 @@ object PinPolish {
     /** Readings this much tighter than the stored one are worth a write. */
     const val MIN_GAIN_METERS = 0.3f
 
+    /** A settled estimate this far from the stored one is worth a write even at the same accuracy. */
+    const val MIN_SHIFT_METERS = 0.5
+
     /** However tight the saved fix, moving further than this means leaving. */
     const val MIN_LEAVE_METERS = 8.0
 
@@ -30,6 +33,11 @@ object PinPolish {
     fun step(saved: PinFix, best: PinFix, next: PinFix): Step {
         val away = GeoMath.distanceMeters(saved.latitude, saved.longitude, next.latitude, next.longitude)
         if (next.moving || away > max(MIN_LEAVE_METERS, 2.0 * saved.estAccuracyMeters)) return Step.Stop
-        return if (next.estAccuracyMeters < best.estAccuracyMeters - MIN_GAIN_METERS) Step.Improve(next) else Step.Keep
+        // Tighter is better. So is a settled reading of the same quality that has moved: the
+        // estimate was still catching up from the walk in when Save was tapped.
+        val tighter = next.estAccuracyMeters < best.estAccuracyMeters - MIN_GAIN_METERS
+        val caughtUp = next.settled && next.estAccuracyMeters <= best.estAccuracyMeters + MIN_GAIN_METERS &&
+            GeoMath.distanceMeters(best.latitude, best.longitude, next.latitude, next.longitude) > MIN_SHIFT_METERS
+        return if (tighter || caughtUp) Step.Improve(next) else Step.Keep
     }
 }

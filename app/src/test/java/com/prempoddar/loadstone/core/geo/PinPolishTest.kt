@@ -24,4 +24,12 @@ class PinPolishTest {
         assertThat(PinPolish.step(saved, saved, fix(15.0, 3f))).isEqualTo(PinPolish.Step.Stop)
         assertThat(PinPolish.step(saved, saved, fix(1.0, 3f, moving = true))).isEqualTo(PinPolish.Step.Stop)
     }
+
+    @Test fun takesASettledReadingThatHasCaughtUp() {
+        // Same accuracy, but settled and 2 m on: the estimate was still catching up at Save.
+        val next = PinFix(19.0 + 2.0 / 111_000.0, 72.8, 6f, sampleCount = 20, settled = true)
+        assertThat(PinPolish.step(saved, saved, next)).isEqualTo(PinPolish.Step.Improve(next))
+        // Unsettled, it waits.
+        assertThat(PinPolish.step(saved, saved, next.copy(settled = false))).isEqualTo(PinPolish.Step.Keep)
+    }
 }

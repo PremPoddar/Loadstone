@@ -53,6 +53,9 @@ class PositionEstimator(
     private var moving = false
     private var lastReportedSigma = Double.MAX_VALUE
     private var settledSince = 0
+    private var wasMoving = false
+    // Where the latest fixes sit relative to the estimate, east and north, over the last few.
+    private val recentOffsets = ArrayDeque<Pair<Double, Double>>()
 
     fun reset() {
         frame = null
@@ -68,6 +71,8 @@ class PositionEstimator(
         moving = false
         lastReportedSigma = Double.MAX_VALUE
         settledSince = 0
+        wasMoving = false
+        recentOffsets.clear()
     }
 
     /**
@@ -111,8 +116,17 @@ class PositionEstimator(
         }
         consecutiveRejects = 0
 
+        // Fused fixes are already smoothed, so one second's fix largely repeats the last: they are not
+        // independent, and a filter that treats them as independent soon grows so sure of itself
+        // that it stops listening. Keeping its variance at least the part of the error repeated
+        // fixes cannot average away keeps it following the provider as the provider improves.
+        variance = max(variance, (FOLLOW_FRACTION * fix.accuracyMeters.toDouble()).let { it * it })
+
         // Standard scalar Kalman update, applied to each axis with the shared isotropic gain.
-        val gain = variance / s
+        val s2 = variance + r
+        val gain = variance / s2
+        recentOffsets.addLast((zEast - east) to (zNorth - north))
+        while (recentOffsets.size > LAG_WINDOW) recentOffsets.removeFirst()
         east += gain * (zEast - east)
         north += gain * (zNorth - north)
         variance *= (1 - gain)
@@ -152,6 +166,10 @@ class PositionEstimator(
         if (dt <= 0.0) return
         val speed = speedMps?.takeIf { it.isFinite() && it >= 0f }?.toDouble() ?: 0.0
         moving = speed > WALKING_MPS
+        // Just stopped: everything learnt while walking describes the path, not this spot. Let the
+        // next fixes take over at once instead of creeping toward them from behind.
+        if (wasMoving && !moving) variance = max(variance, STOP_RESET_M * STOP_RESET_M)
+        wasMoving = moving
         val drift = max(STILL_DRIFT_MPS, speed)
         // Deterministic displacement, not a random walk: a steady 1.2 m/s for 5 s really can put
         // you 6 m away, and squaring the whole displacement says exactly that.
@@ -201,7 +219,19 @@ class PositionEstimator(
     private fun biasFloor(): Double =
         max(ABSOLUTE_FLOOR_M, bestAccuracy.toDouble() * CORRELATED_FRACTION)
 
-    private fun sigmaMeters(): Double = max(sqrt(variance), biasFloor())
+    /**
+     * How far behind the fixes the estimate is: if the last few all sit on one side, their mean
+     * offset is the lag (noise, scattered all round, averages out of it). While it's large the
+     * estimate is still catching up, and saying so keeps Save from locking in a spot you've left.
+     */
+    private fun lagMeters(): Double {
+        if (recentOffsets.size < 3) return 0.0
+        val e = recentOffsets.sumOf { it.first } / recentOffsets.size
+        val n = recentOffsets.sumOf { it.second } / recentOffsets.size
+        return sqrt(e * e + n * n)
+    }
+
+    private fun sigmaMeters(): Double = maxOf(sqrt(variance), biasFloor(), lagMeters())
 
     /** Current estimate, or null until a usable fix has arrived. */
     fun current(): PinFix? {
@@ -244,6 +274,19 @@ class PositionEstimator(
 
         /** Fraction of the best observed accuracy that is shared bias, not averageable noise. */
         const val CORRELATED_FRACTION = 0.55
+
+        /**
+         * The least uncertainty the filter keeps, as a fraction of each fix's accuracy, so it goes
+         * on following the provider: about ten seconds of memory. Less forgets too fast when the
+         * provider wanders; more freezes on the fixes from before it had settled.
+         */
+        const val FOLLOW_FRACTION = 0.35
+
+        /** Uncertainty allowed back in when the user stops walking, so the stopping spot wins quickly. */
+        const val STOP_RESET_M = 6.0
+
+        /** Fixes looked at to tell lag from noise. */
+        const val LAG_WINDOW = 5
 
         /** No consumer GNSS receiver is honestly better than this. */
         const val ABSOLUTE_FLOOR_M = 3.0

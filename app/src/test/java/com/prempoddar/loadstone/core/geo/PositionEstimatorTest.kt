@@ -133,4 +133,25 @@ class PositionEstimatorTest {
         e.reset()
         assertThat(e.current()).isNull()
     }
+
+    @Test fun `a pin follows the fixes as they settle instead of freezing on the first ones`() {
+        // What the fused provider does just after you stop: ten seconds still 6 m out while it
+        // settles, then good fixes on the spot. Those later fixes are the ones that count.
+        val e = PositionEstimator()
+        val r = Random(11)
+        var t = 0L
+        repeat(10) { e.add(at(6.0 + r.nextDouble(-0.5, 0.5), r.nextDouble(-0.5, 0.5), accuracy = 8f, timeMs = t)); t += 1000 }
+        repeat(30) { e.add(at(r.nextDouble(-1.0, 1.0), r.nextDouble(-1.0, 1.0), accuracy = 4f, timeMs = t)); t += 1000 }
+        assertThat(e.current()!!.errorMeters()).isLessThan(1.5)
+    }
+
+    @Test fun `stopping after a walk saves where you stopped, not where you were`() {
+        val e = PositionEstimator()
+        val r = Random(4)
+        var t = 0L
+        // Walk 40 m north at 1.3 m/s, then stand at the spot for 15 s; fixes lag a little behind as fused ones do.
+        for (i in 0..30) { e.add(at(0.0, i * 1.3 - 40.0 - 2.0, accuracy = 6f, timeMs = t, speed = 1.3f)); t += 1000 }
+        repeat(15) { e.add(at(r.nextDouble(-1.0, 1.0), r.nextDouble(-1.0, 1.0), accuracy = 5f, timeMs = t, speed = 0f)); t += 1000 }
+        assertThat(e.current()!!.errorMeters()).isLessThan(1.5)
+    }
 }
