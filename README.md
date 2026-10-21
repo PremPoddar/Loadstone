@@ -1,21 +1,21 @@
 <div align="center">
 
-<img src=".github/assets/icon.png" width="112" alt="Loadstone">
+<img src=".github/assets/banner.png" alt="Loadstone: drop a pin, walk back to the exact spot" width="100%">
 
-# Loadstone
-
-**Drop a pin. Follow it back.**
-
-An offline compass that points at the spot you saved — not a map.
+<br><br>
 
 [![Android 8.0+](https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white)](https://developer.android.com)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.1-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/compose)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue)](LICENSE)
+[![Website](https://img.shields.io/badge/Website-prempoddar.github.io%2FLoadstone-5B6BF0)](https://prempoddar.github.io/Loadstone/)
+
+**[Website](https://prempoddar.github.io/Loadstone/)** · **[Google Play](https://play.google.com/store/apps/details?id=com.prempoddar.loadstone)** · **[Privacy](https://prempoddar.github.io/Loadstone/privacy)** · **[Report a problem](https://github.com/PremPoddar/Loadstone/issues)**
 
 </div>
 
 ---
+
 
 Mark where you left the car on level 3, where the trailhead was, where the tent is. Hours or
 weeks later, open the pin and walk: one arrow, one distance, no map tiles, no signal needed.
@@ -24,7 +24,10 @@ Loadstone does one thing, and the whole app is built around doing it honestly �
 just where to walk but how sure it is, because a confident arrow pointing at the wrong bench is
 worse than no arrow at all.
 
-## What it does
+<p align="center"><img src=".github/assets/showcase.png" alt="Finding a pin, saving one, the radar and Appearance" width="100%"></p>
+<p align="center"><sub>Drawn by the app's own code; the pins and readings are samples.</sub></p>
+
+## ✨ What it does
 
 | | |
 |---|---|
@@ -35,12 +38,21 @@ worse than no arrow at all.
 | 💬 **Share as words** | Seven funny words instead of a link. Travels through any chat app, or down a phone line. |
 | 📌 **Pin to top** | Swipe a card right to hold it above the distance sort, left to let it go. |
 | 🏷️ **Categories** | Car, home, camp, trail, star — and every card draws its own icon from the family. |
-| 🌗 **Material You** | Dynamic color, full light and dark themes, metric or imperial. |
+| 📡 **Radar** | Every pin around you at its true direction and scaled distance. No map tiles. |
+| 🔔 **Guide with the screen off** | A notification keeps the distance and direction, and the phone buzzes as you close in. |
+| 🧵 **Trail back** | Retrace the path you walked, step by step. |
+| 🌅 **Sunset warning** | Worked out on the phone, so you know when daylight is running out. |
+| 🎙️ **Voice notes** | "Third pillar from the gate, blue door", kept with the pin. |
+| 🗂️ **Folders** | File pins by trip, place or anything else. |
+| 📦 **Backup &amp; export** | One file with every pin, photo and voice note; GPX and KML for map apps; QR codes. |
+| 🏠 **Widget** | The pinned spot on your home screen, with how far it is. |
+| 🔒 **App lock** | Fingerprint, face or the phone's screen lock. |
+| 🎨 **Appearance** | Light, dark, dusk or OLED black, Material You, fonts, shapes and haptics. Metric or imperial. |
 
 Location is used **only while the app is open**. Nothing is tracked in the background, and
 nothing leaves the phone unless you share a pin yourself.
 
-## Sharing a place as a sentence
+## 💬 Sharing a place as a sentence
 
 A shared link is only as good as whatever opens it. A sentence needs nothing:
 
@@ -60,7 +72,15 @@ position wrong by construction, before any arithmetic runs.
 Read one back with the **import** button in the toolbar. It accepts the whole forwarded message, not
 just the seven words, and tells you which word it doesn't recognise as you type.
 
-## How it stays accurate
+## 🎯 How it stays accurate
+
+```mermaid
+flowchart LR
+    F[GPS fixes<br/>each with its own radius] --> K[Kalman filter<br/>in a local east/north frame]
+    K --> P[Pin<br/>a position and an honest radius]
+    P --> A[One arrow<br/>to true north, steadied]
+    V[A later visit] -. sharpen .-> P
+```
 
 A phone's GPS doesn't report one true point — each fix comes with an accuracy radius that shrinks
 as the receiver settles. Loadstone runs those fixes through a **recursive Bayesian (Kalman)
@@ -107,20 +127,20 @@ guess.
 
 </details>
 
-## Build & run
+## 🛠️ Build and run
 
 Requires the Android SDK and JDK 17.
 
 | Command | What it does |
 |---|---|
 | `./gradlew :app:installDebug` | Build and install on a connected device or emulator |
-| `./gradlew :app:testDebugUnitTest` | Unit tests — the filter, the word codec, geo maths, formatting |
+| `./gradlew :app:testDebugUnitTest` | Unit tests: the filter, the word codec, geo maths, formatting, backup files. `ScreensTest` draws the pictures above to `app/build/screens` |
 | `./gradlew :app:connectedDebugAndroidTest` | Room persistence tests (needs a device) |
 | `./gradlew bundleRelease` | Signed release bundle for Play (see `keystore.properties.sample`) |
 
 `minSdk` 26 (Android 8.0) · `targetSdk` 36 · package `com.prempoddar.loadstone`
 
-## Architecture
+## 🗂️ Architecture
 
 Single-activity Jetpack Compose, MVVM with `StateFlow`, Hilt for DI.
 
@@ -135,7 +155,9 @@ data/location  LocationRepository (fused provider) · CompassRepository (true no
 data/pin       pin model and repository
 data/db        Room entities, DAO and migrations
 data/settings  DataStore-backed preferences
-share          WordCode and its frozen vocabularies · AppLinks for incoming links
+share          WordCode and its frozen vocabularies · AppLinks · QR codes · GPX/KML files
+guide          the screen-off guide service
+widget         the home screen widget
 ui/            one package per screen, plus components —
                AccuracyDial and CompassArrow are custom-drawn
 ```
@@ -143,6 +165,6 @@ ui/            one package per screen, plus components —
 Everything in `core/` is free of Android dependencies, so the parts worth being sure about are
 covered by plain JVM tests.
 
-## License
+## 📄 License
 
 [Apache 2.0](LICENSE)
