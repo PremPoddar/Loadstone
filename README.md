@@ -144,6 +144,11 @@ Requires the Android SDK and JDK 17.
 
 Single-activity Jetpack Compose, MVVM with `StateFlow`, Hilt for DI.
 
+<p align="center"><img src=".github/assets/modules.png" alt="Loadstone source packages and what each one does" width="100%"></p>
+
+<details>
+<summary><strong>As text</strong></summary>
+
 ```
 core/geo       PositionEstimator  the filter every pin comes from
                LocalFrame         east/north tangent plane
@@ -161,6 +166,8 @@ widget         the home screen widget
 ui/            one package per screen, plus components —
                AccuracyDial and CompassArrow are custom-drawn
 ```
+
+</details>
 
 Everything in `core/` is free of Android dependencies, so the parts worth being sure about are
 covered by plain JVM tests.
