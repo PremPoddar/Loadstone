@@ -48,7 +48,10 @@ import java.io.File
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [34], qualifiers = "w411dp-h891dp-xxhdpi")
-class ScreensTest {
+open class ScreensTest {
+    /** Where the pictures go; the tablet runs below draw the same screens into their own folders. */
+    protected open val out = "build/screens"
+
     @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
     private val dark = Appearance(mode = Appearance.Mode.DARK)
@@ -61,7 +64,7 @@ class ScreensTest {
         val view = rule.activity.window.decorView
         val bmp = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
         rule.runOnUiThread { view.draw(Canvas(bmp)) }
-        File("build/screens").apply { mkdirs() }.resolve("$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        File(out).apply { mkdirs() }.resolve("$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 
     @Composable
