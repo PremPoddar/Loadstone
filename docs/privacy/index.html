@@ -22,41 +22,61 @@
 </head>
 <body>
   <h1>Loadstone — Privacy Policy</h1>
-  <p class="muted">Last updated: 5 October 2026</p>
+  <p class="muted">Last updated: 26 October 2026</p>
 
-  <p>Loadstone is a pin-and-follow-back navigation app. It is built to keep your data on your
-  device. This policy explains what the app accesses and why.</p>
+  <p>Loadstone is a pin-and-follow-back navigation app: save a place, then let it guide you back.
+  It is built to keep your data on your device. This policy explains what the app accesses and why.</p>
 
   <h2>What Loadstone accesses</h2>
   <ul>
-    <li><strong>Location</strong> — used only while the app is open, to save a pin at your current
-    spot and to point you back to a saved pin. Loadstone does not access your location in the
-    background and does not track your movement.</li>
-    <li><strong>Camera</strong> — used only when you choose to add a photo to a pin. Photos are
-    saved in the app's private storage on your device.</li>
+    <li><strong>Location</strong>, while the app is open: to save a pin where you are and to
+    point you back to a saved pin.</li>
+    <li><strong>Location while guiding or recording</strong>: if you turn on <em>Screen off</em>
+    (guidance in a notification) or <em>Record my way</em> (saving the route you walk from a pin),
+    Loadstone keeps using your location with the screen off or another app open, through a
+    foreground service that shows a notification the whole time. It stops when you stop guiding or
+    recording. Loadstone never asks for background location and never uses location at
+    any other time.</li>
+    <li><strong>Camera</strong>: only when you take a photo for a pin, through your camera app.</li>
+    <li><strong>Microphone</strong>: only while you record a voice note for a pin.</li>
+    <li><strong>Notifications and vibration</strong>: for the guidance notification and the buzz
+    when you arrive.</li>
   </ul>
 
   <h2>What Loadstone does <em>not</em> do</h2>
   <ul>
     <li>No account or sign-in.</li>
-    <li>No data is collected, transmitted to us, or shared with third parties.</li>
+    <li>No data is collected, transmitted to us, or shared with third parties. Loadstone has no
+    internet access.</li>
     <li>No analytics, advertising, or tracking SDKs.</li>
   </ul>
 
-  <h2>Your data and sharing</h2>
-  <p>Your pins, notes, elevation, and photos are stored locally on your device. Nothing leaves your
-  device unless <em>you</em> choose to share a pin — the Share action produces a short sentence of
-  seven words encoding the pin's coordinates and nothing else, which you send through an app of
-  your choice. The pin's name, note and photos are not included.</p>
+  <h2>Your data</h2>
+  <p>Your pins, with their names, notes, photos, voice notes, recorded routes and elevation, are
+  stored only in the app's private storage on your device.</p>
+
+  <h2>Sharing, only when you choose to</h2>
+  <ul>
+    <li><strong>Share as words</strong>: a sentence of seven words encoding the pin's position and
+    nothing else.</li>
+    <li><strong>QR code</strong>: a link with the pin's position, name and note, for someone to
+    scan.</li>
+    <li><strong>Open in Maps</strong>: hands the pin's position and name to the maps app you pick.</li>
+    <li><strong>Export GPX or KML</strong> and <strong>Back up</strong>: files saved where you
+    choose. A backup includes everything, photos and voice notes too.</li>
+  </ul>
+  <p>Whatever you share goes through the app or place you pick, under its own privacy policy.</p>
 
   <h2>Retention and deletion</h2>
   <p>Data stays on your device until you delete a pin or uninstall the app, which removes all
-  associated data including photos.</p>
+  of it, including photos, voice notes and routes. Files you exported or backed up stay where you
+  saved them.</p>
 
   <h2>Children</h2>
   <p>Loadstone is not directed to children under 13 and does not knowingly collect data from them.</p>
 
   <h2>Contact</h2>
-  <p>Questions? Email <a href="mailto:prem.poddar77@gmail.com">prem.poddar77@gmail.com</a>.</p>
+  <p>Questions? Email <a href="mailto:prem.poddar77@gmail.com">prem.poddar77@gmail.com</a>
+  or open an issue at <a href="https://github.com/PremPoddar/Loadstone/issues">github.com/PremPoddar/Loadstone/issues</a>.</p>
 </body>
 </html>
