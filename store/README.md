@@ -16,5 +16,5 @@ own code (`ScreensTest`, which also renders the tablet sizes into `app/build/scr
 
 ## Videos
 
-`videos/Loadstone location service demo.mp4` shows the app using the permission, for the FOREGROUND_SERVICE_LOCATION declaration (App content → Foreground service permissions). Upload it to YouTube as
+`videos/Loadstone FOREGROUND_SERVICE_LOCATION.mp4` shows the app using the permission, for the FOREGROUND_SERVICE_LOCATION declaration (App content → Foreground service permissions). Upload it to YouTube as
 unlisted and paste the link.
