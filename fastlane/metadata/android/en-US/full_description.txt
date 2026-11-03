@@ -1,0 +1,11 @@
+<p><b>Drop a pin, walk back to the exact spot.</b> Mark where you left the car on level 3, where the trailhead was, where the tent is. Hours or weeks later, open the pin and walk: one arrow, one distance, no map tiles, no signal needed.</p>
+<ul>
+<li><b>Follow-back arrow</b> to true north, corrected for magnetic declination.</li>
+<li><b>Honest accuracy:</b> every pin carries the radius you may have to search.</li>
+<li><b>Sharpen a pin</b> by standing on the spot again.</li>
+<li><b>Photos and voice notes</b> on pins, folders, and a home-screen widget.</li>
+<li><b>Retrace your exact path</b>, and get guided with the screen off.</li>
+<li><b>Radar</b> of the pins around you, live elevation and sunset warnings.</li>
+<li><b>Share as seven words</b> or a QR code; back up, restore and move pins to other map apps.</li>
+<li><b>App lock</b> and home-screen shortcuts.</li>
+</ul>

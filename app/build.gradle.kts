@@ -50,13 +50,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            // Use the real keystore when present, else fall back to debug signing so
-            // release builds are still installable for testing.
-            signingConfig = if (hasReleaseKeystore) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+            // Signed with the upload key when keystore.properties is there; otherwise left unsigned,
+            // for builders such as F-Droid that sign with their own key.
+            if (hasReleaseKeystore) signingConfig = signingConfigs.getByName("release")
         }
     }
 
