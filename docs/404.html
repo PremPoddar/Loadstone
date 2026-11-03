@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<!-- Shown for any missing address, so links are resolved from the site's root. -->
+<base href="/Loadstone/" />
+<title>Page not found · Loadstone</title>
+<meta name="robots" content="noindex" />
+<meta name="theme-color" content="#0B0D16" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 108 108'%3E%3Crect width='108' height='108' rx='24' fill='%23161A54'/%3E%3Cpath d='M54 82V32M36 51l18-19 18 19' stroke='%23EDEEF6' stroke-width='12' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root{--bg:#0B0D16;--bg-2:#141829;--text:#EDEEF6;--muted:#8A90AD;--accent:#5B6BF0;--accent-2:#3D4BCF;--accent-3:#A9B2FF;--on-accent:#FFFFFF;
+--accent-glow:rgba(91,107,240,0.38);--accent-soft:rgba(91,107,240,0.14);--accent-line:rgba(91,107,240,0.3);--line:rgba(255,255,255,.08);--line-strong:rgba(255,255,255,.22);--card:rgba(255,255,255,.04);--card-solid:#141829;
+--display:"Space Grotesk",system-ui,sans-serif;--body:"IBM Plex Sans",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{min-height:100%}
+body{font-family:var(--body);background:var(--bg);color:var(--text);line-height:1.6;font-size:17px;-webkit-font-smoothing:antialiased;overflow-x:hidden;display:flex;flex-direction:column;min-height:100vh}
+a{color:inherit}
+.bg{position:fixed;inset:0;z-index:-2;background:radial-gradient(60% 50% at 50% 0%,rgba(91,107,240,0.17),transparent 70%),radial-gradient(40% 40% at 88% 70%,rgba(91,107,240,0.09),transparent 70%),linear-gradient(180deg,var(--bg),var(--bg-2))}
+.grid{position:fixed;inset:0;z-index:-1;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:54px 54px;
+mask-image:radial-gradient(ellipse 80% 60% at 50% 30%,#000 40%,transparent 100%);-webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 30%,#000 40%,transparent 100%)}
+nav{display:flex;align-items:center;justify-content:space-between;max-width:1100px;width:100%;margin:0 auto;padding:18px 24px}
+.brand{display:flex;align-items:center;gap:12px;font-family:var(--display);font-weight:700;font-size:1.08rem;text-decoration:none}
+.brand img{width:30px;height:30px;border-radius:8px}
+main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px 24px 56px}
+.stage{position:relative;isolation:isolate;width:min(340px,86vw)}
+.big{position:absolute;left:50%;top:50%;transform:translate(-50%,-46%);font-family:var(--display);font-weight:700;font-size:clamp(7rem,30vw,13rem);line-height:1;letter-spacing:-.05em;
+background:linear-gradient(180deg,rgba(91,107,240,0.3),transparent 90%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;z-index:-1;user-select:none}
+.art{width:100%;height:auto;display:block;overflow:visible;filter:drop-shadow(0 24px 40px rgba(91,107,240,0.38))}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-top:34px}
+h1{font-family:var(--display);font-size:clamp(2rem,5.4vw,3.3rem);font-weight:700;letter-spacing:-.03em;line-height:1.08;margin-top:14px;max-width:760px}
+.hl{background:linear-gradient(120deg,var(--accent),var(--accent-3));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+p.lead{color:var(--muted);max-width:540px;margin:18px auto 0;font-size:clamp(1rem,2.2vw,1.12rem)}
+.path{display:inline-block;margin-top:20px;font-family:var(--mono);font-size:.8rem;color:var(--muted);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 14px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.path b{color:var(--text);font-weight:500}
+.cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:30px}
+.btn{display:inline-flex;align-items:center;gap:10px;text-decoration:none;border-radius:999px;font-size:1rem;padding:14px 26px;transition:transform .22s,box-shadow .22s,border-color .2s,background .2s}
+.btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:var(--on-accent);font-weight:680;box-shadow:0 12px 34px -8px var(--accent-glow)}
+.btn.primary:hover{transform:translateY(-3px);box-shadow:0 20px 44px -8px var(--accent-glow)}
+.btn.ghost{border:1px solid var(--line);background:var(--card);font-weight:550}
+.btn.ghost:hover{border-color:var(--line-strong)}
+.btn svg{width:18px;height:18px}
+footer{text-align:center;padding:0 24px 28px;font-size:.88rem;color:var(--muted)}
+footer a{text-decoration:none;margin:0 10px}footer a:hover{color:var(--text)}
+.fade{animation:fadeUp .8s ease both}.f1{animation-delay:.08s}.f2{animation-delay:.16s}.f3{animation-delay:.24s}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
+.needle{transform-box:view-box;transform-origin:160px 90px;animation:lost 5s cubic-bezier(.5,0,.3,1) infinite}
+@keyframes lost{0%{transform:rotate(0)}25%{transform:rotate(140deg)}40%{transform:rotate(95deg)}65%{transform:rotate(-120deg)}80%{transform:rotate(-70deg)}100%{transform:rotate(360deg)}}
+.ping{transform-box:fill-box;transform-origin:center;animation:ping 2.4s ease-out infinite}
+@keyframes ping{from{opacity:.9;transform:scale(1)}to{opacity:0;transform:scale(3.6)}}
+.cd{font-family:var(--mono);font-size:12px;fill:var(--muted);letter-spacing:.2em}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="bg"></div><div class="grid"></div>
+<nav><a class="brand" href="./"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 108 108'%3E%3Crect width='108' height='108' rx='24' fill='%23161A54'/%3E%3Cpath d='M54 82V32M36 51l18-19 18 19' stroke='%23EDEEF6' stroke-width='12' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E" alt="" />Loadstone</a></nav>
+<main>
+  <div class="stage fade"><div class="big">404</div>
+<svg class="art" viewBox="0 0 320 180" aria-hidden="true">
+  <circle cx="160" cy="90" r="74" fill="none" stroke="var(--line)"/><circle cx="160" cy="90" r="52" fill="none" stroke="var(--line)" stroke-dasharray="3 6"/>
+  <circle class="ping" cx="160" cy="90" r="20" fill="none" stroke="var(--accent)"/>
+  <g class="needle"><path d="M160 40l18 58h-36Z" fill="var(--accent)"/><path d="M142 98h36l-18 22Z" fill="var(--line-strong)"/></g>
+  <circle cx="160" cy="90" r="6" fill="var(--text)"/>
+  <text x="160" y="16" text-anchor="middle" class="cd">N</text>
+</svg></div>
+  <p class="eyebrow fade f1">Error 404 · no pin here</p>
+  <h1 class="fade f1">Nothing was <span class="hl">pinned here.</span></h1>
+  <p class="lead fade f2">The arrow's spinning because there's no page at this address. It may have moved, or there's a typo in the link. Here's the way back.</p>
+  <span class="path fade f2" id="path" hidden>Looked for <b></b></span>
+  <div class="cta fade f3">
+    <a class="btn primary" href="./"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Back to Loadstone</a>
+    <a class="btn ghost" href="https://github.com/PremPoddar/Loadstone/issues">Report a broken link</a>
+  </div>
+</main>
+<footer><a href="privacy/">Privacy</a><a href="https://github.com/PremPoddar/Loadstone">Source</a><a href="https://github.com/PremPoddar">More apps</a></footer>
+<script>
+  // Show which address was missing, without the site's own folder at the front.
+  var p = decodeURIComponent(location.pathname).replace(/^\/Loadstone\/?/i, "/");
+  if (p.length > 1) { var e = document.getElementById("path"); e.querySelector("b").textContent = p; e.hidden = false; }
+</script>
+</body>
+</html>
