@@ -11,7 +11,7 @@
 [![Website](https://img.shields.io/badge/Website-prempoddar.github.io%2FLoadstone-5B6BF0)](https://prempoddar.github.io/Loadstone/)
 [![Latest release](https://img.shields.io/github/v/release/PremPoddar/Loadstone?label=Download&logo=android&logoColor=white&color=5B6BF0)](https://github.com/PremPoddar/Loadstone/releases/latest)
 
-**[Website](https://prempoddar.github.io/Loadstone/)** · **[Google Play](https://play.google.com/store/apps/details?id=com.prempoddar.loadstone)** · **[Download APK](https://github.com/PremPoddar/Loadstone/releases/latest)** · **[Privacy](https://prempoddar.github.io/Loadstone/privacy)** · **[Report a problem](https://github.com/PremPoddar/Loadstone/issues)**
+**[Website](https://prempoddar.github.io/Loadstone/)** · **[Google Play](https://play.google.com/store/apps/details?id=com.prempoddar.loadstone)** · **[Download APK](https://github.com/PremPoddar/Loadstone/releases/latest)** · **[F-Droid repo](https://prempoddar.github.io/fdroid/repo?fingerprint=B22CDB8846EA991100C5D8DD2CBB893AF2C51B72406210B94B9F8C9B539E8BF6)** · **[Privacy](https://prempoddar.github.io/Loadstone/privacy)** · **[Report a problem](https://github.com/PremPoddar/Loadstone/issues)**
 
 </div>
 
