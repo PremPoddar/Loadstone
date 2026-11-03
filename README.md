@@ -9,8 +9,9 @@
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/compose)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue)](LICENSE)
 [![Website](https://img.shields.io/badge/Website-prempoddar.github.io%2FLoadstone-5B6BF0)](https://prempoddar.github.io/Loadstone/)
+[![Latest release](https://img.shields.io/github/v/release/PremPoddar/Loadstone?label=Download&logo=android&logoColor=white&color=5B6BF0)](https://github.com/PremPoddar/Loadstone/releases/latest)
 
-**[Website](https://prempoddar.github.io/Loadstone/)** · **[Google Play](https://play.google.com/store/apps/details?id=com.prempoddar.loadstone)** · **[Privacy](https://prempoddar.github.io/Loadstone/privacy)** · **[Report a problem](https://github.com/PremPoddar/Loadstone/issues)**
+**[Website](https://prempoddar.github.io/Loadstone/)** · **[Google Play](https://play.google.com/store/apps/details?id=com.prempoddar.loadstone)** · **[Download APK](https://github.com/PremPoddar/Loadstone/releases/latest)** · **[Privacy](https://prempoddar.github.io/Loadstone/privacy)** · **[Report a problem](https://github.com/PremPoddar/Loadstone/issues)**
 
 </div>
 
