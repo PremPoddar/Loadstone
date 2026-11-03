@@ -156,7 +156,7 @@
 
   :focus-visible{outline:2px solid var(--indigo);outline-offset:3px;border-radius:6px}
 
-  .by-strip{position:relative;z-index:60;display:flex;justify-content:center;align-items:center;gap:18px;flex-wrap:wrap;padding:7px 16px;font-size:.8rem;color:var(--muted);border-bottom:1px solid var(--line)}.by-strip a{color:var(--paper);text-decoration:none;font-weight:600}.by-strip a:hover{text-decoration:underline}
+    .brand-line{display:flex;align-items:center;gap:10px;min-width:0}.by-sep{color:var(--muted);opacity:.55}.by{color:var(--muted);text-decoration:none;font-weight:500;font-size:.95rem;white-space:nowrap;transition:color .2s}.by:hover{color:var(--paper)}@media(max-width:520px){.brand-line{flex-direction:column;align-items:flex-start;gap:0}.by-sep{display:none}.by{font-size:.74rem;line-height:1.1;margin-left:37px;margin-top:-3px}}
   @media (max-width:880px){
     .hero-grid,.why,.foss{grid-template-columns:1fr}
     .hero-grid{gap:44px}
@@ -165,23 +165,23 @@
     .lede{max-width:none}
     .nav-links{gap:16px}
   }
+  @media (max-width:600px){.nav-links a:not(:last-child){display:none}}
   @media (prefers-reduced-motion:reduce){
     *{animation:none!important;transition:none!important}
   }
 </style>
 </head>
 <body>
-<div class="by-strip"><span>An app by <a href="https://prempoddar.is-a.dev">Prem Poddar</a></span><a href="https://prempoddar.is-a.dev/apps/">More apps →</a></div>
 
 <nav class="nav">
   <div class="nav-in">
-    <a class="brand" href="#top">
+    <div class="brand-line"><a class="brand" href="#top">
       <svg viewBox="0 0 108 108" aria-hidden="true">
         <rect width="108" height="108" rx="26" fill="#161A54"/>
         <path d="M54 82V32M36 51l18-19 18 19" stroke="#EDEEF6" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
       </svg>
       Loadstone
-    </a>
+    </a><span class="by-sep">—</span><a class="by" href="https://prempoddar.is-a.dev">Prem Poddar</a></div>
     <div class="nav-links">
       <a href="#how">How it works</a>
       <a href="#accuracy">Accuracy</a>
